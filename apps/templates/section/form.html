@@ -1,0 +1,48 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Criar Seção{% endblock %}
+
+{% block content %}
+
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10 col-sm-12">
+            <!-- Card para criar nova seção -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-1">{% if section %}Editando Seção{% else %}Criar Seção{% endif %}</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="create-section-form">
+                        {% csrf_token %}
+                        {{form.media}}
+
+                        <!-- Campo para o título da seção -->
+                        <div class="form-group">
+                            <label for="{{ form.title.id_for_label }}">Nome</label>
+                            {{ form.title}}
+                            
+                            {{ form.title.errors }}
+                        </div>
+
+                        <!-- Campo para o upload de imagem -->
+                        <div class="form-group">
+                            <label for="{{ form.imagem.id_for_label }}">Imagem</label>
+                            {{ form.imagem}}
+                            {{ form.imagem.errors }}
+                        </div>
+
+                        <div class="button-group d-flex justify-content-between mt-4">
+                            <!-- Botão de submissão -->
+                            <button type="submit" class="btn btn-primary">Salvar</button>
+                            <!-- Botão para voltar -->
+                            <a href="{% url 'list_section' %}" class="btn btn-secondary">Voltar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

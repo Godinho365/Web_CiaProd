@@ -1,0 +1,97 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Criar Tópico{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10 col-sm-12">
+            <!-- Card para criar ou editar tópico -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-1">{% if topic %}Editando Tópico{% else %}Criar Tópico{% endif %}</h2>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        <div class="alert alert-success" role="alert">
+                            {% for message in messages %}
+                                {{ message }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <form method="post" 
+                          action="{% if topic %}{% url 'update_topic' section.id category.id subcategory.id topic.id %}{% else %}{% url 'create_topic' section.id category.id subcategory.id %}{% endif %}" 
+                          enctype="multipart/form-data" 
+                          id="create-topic-form">
+                        {% csrf_token %}
+                        {{ form.media }}
+
+                        <!-- Campo Nome -->
+                        <div class="form-group">
+                            <label for="{{ form.name.id_for_label }}">Nome</label>
+                            {{ form.name }}  <!-- Campo de nome -->
+                            {% for error in form.name.errors %}
+                                <div class="error text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Campo Seção -->
+                        <div class="form-group">
+                            <label for="{{ form.section.id_for_label }}">Seção</label>
+                            {{ form.section }}  <!-- Campo de seção -->
+                            <input type="hidden" name="section_id" value="{{ section.id }}">
+                            {% for error in form.section.errors %}
+                                <div class="error text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Campo Categoria -->
+                        <div class="form-group">
+                            <label for="{{ form.category.id_for_label }}">Categoria</label>
+                            {{ form.category }}  <!-- Campo de categoria -->
+                            <input type="hidden" name="category_id" value="{{ category.id }}">
+                            {% for error in form.category.errors %}
+                                <div class="error text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Campo Subcategoria -->
+                        <div class="form-group">
+                            <label for="{{ form.subcategory.id_for_label }}">Subcategoria</label>
+                            {{ form.subcategory }}  <!-- Campo de subcategoria -->
+                            <input type="hidden" name="subcategory_id" value="{{ subcategory.id }}">
+                            {% for error in form.subcategory.errors %}
+                                <div class="error text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Campo Imagem -->
+                        <div class="form-group">
+                            <label for="{{ form.imagem.id_for_label }}">Imagem</label>
+                            {{ form.imagem }}
+                            {% for error in form.imagem.errors %}
+                                <div class="error text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Campo Conteúdo -->
+                        <div class="form-group">
+                            <label for="{{ form.content.id_for_label }}">Conteúdo</label>
+                            {{ form.content }}
+                            {% for error in form.content.errors %}
+                                <div class="error text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="button-group d-flex justify-content-between mt-4">
+                            <button type="submit" class="btn btn-primary">Salvar</button>
+                            <a href="{% url 'list_topic' section.id category.id subcategory.id %}" class="btn btn-secondary">Voltar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2"> <!-- Centralizando o card -->
+            {% if messages %}
+                <div class="alert alert-info">
+                    {% for message in messages %}
+                        {{ message }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title">Confirmar Exclusão</h2>
+                    <p class="card-text">Tem certeza de que deseja excluir a instrução <strong>"{{ instruction.title }}"</strong>?</p>
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Excluir</button>
+                        <a href="{% url 'list_instruction' %}" class="btn btn-secondary">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

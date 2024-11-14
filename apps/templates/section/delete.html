@@ -1,0 +1,29 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Deletar Seção{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10 col-sm-12">
+            <!-- Card para deletar a seção -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-1">Deletar Seção: {{ section.title }}</h2>
+                </div>
+                <div class="card-body">
+                    <p>Você tem certeza que deseja deletar a seção <strong>{{ section.title }}</strong>?</p>
+                    <p>Esta ação não pode ser desfeita.</p>
+                    <form method="post" id="delete-section-form">
+                        {% csrf_token %}
+                        <div class="button-group d-flex justify-content-between mt-4">
+                            <button type="submit" class="btn btn-danger">Deletar</button>
+                            <a href="{% url 'list_section' %}" class="btn btn-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

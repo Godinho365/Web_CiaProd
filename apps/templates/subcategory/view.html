@@ -1,0 +1,113 @@
+{% extends "layouts/base.html" %} {% block content %}
+<div class="container-fluid">
+  <div class="header-body">
+    <div class="row align-items-center py-4">
+      <div class="col-lg-6 col-7">
+        <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+          <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+            <li class="breadcrumb-item">
+              <a href="{% url 'list_section' %}"><i class="fas fa-home"></i></a>
+            </li>
+            <li class="breadcrumb-item">
+              <a href="{% url 'list_category' section.id %}"
+                >{{ section.title }}</a
+              >
+            </li>
+            <li class="breadcrumb-item">
+              {% if category %}
+              <a href="{% url 'list_subcategory' section.id category.id %}"
+                >{{ category.name }}</a
+              >
+              {% else %}
+              <span>Categorias</span>
+              {% endif %}
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+              {{ subcategory.name }}
+            </li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <div class="container mt-4">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card mb-4">
+          <div class="card-header text-center">
+            <h5 class="card-title mb-0">{{ subcategory.name }}</h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                {% if subcategory.author %}
+                <div class="card text-center mb-3">
+                  <div class="card-body">
+                    <h6 class="card-title"><strong>Autor:</strong></h6>
+                    <p class="card-text">{{ subcategory.author.username }}</p>
+                  </div>
+                </div>
+                {% else %}
+                <div class="card text-center mb-3">
+                  <div class="card-body">
+                    <h6 class="card-title"><strong>Autor:</strong></h6>
+                    <p class="card-text">Admin</p>
+                  </div>
+                </div>
+                {% endif %}
+
+                <div class="card text-center mb-3">
+                  <div class="card-body">
+                    <h6 class="card-title">
+                      <strong>Data de Criação:</strong>
+                    </h6>
+                    <p class="card-text">
+                      {{ subcategory.created_at|date:"d/m/Y H:i" }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <div class="card text-center">
+                  <div class="card-body">
+                    <h6 class="card-title">
+                      <strong>Contagem de Visualizações:</strong>
+                    </h6>
+                    <p class="card-text">{{ subcategory.view_count }}</p>
+                    <!-- Se existir -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row mt-4">
+              <div class="col-md-12">
+                <div class="card">
+                  <div class="card-body">
+                    <h6 class="card-title"><strong>Conteúdo:</strong></h6>
+                    <p class="card-text">{{ subcategory.content|safe }}</p>
+                    <!-- Exibindo conteúdo da subcategoria -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botão para voltar -->
+            <div class="row mt-4">
+              <div class="col-md-12 text-left">
+                <a
+                  href="{% url 'list_subcategory' section.id category.id %}"
+                  class="btn btn-secondary"
+                >
+                  <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

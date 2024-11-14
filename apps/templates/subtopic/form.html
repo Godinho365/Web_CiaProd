@@ -1,0 +1,79 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{% if subtopic %}Editar Subtópico{% else %}Novo Subtópico{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10 col-sm-12">
+            <!-- Card para criar ou editar subtópico -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-1">{% if subtopic %}Editando Subtópico{% else %}Novo Subtópico{% endif %}</h2>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        <div class="alert alert-success" role="alert">
+                            {% for message in messages %}
+                                {{ message }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <form method="post" 
+                          action="{% if subtopic %}{% url 'update_subtopic' section.id category.id subcategory.id topic.id subtopic.id %}{% else %}{% url 'create_subtopic' section.id category.id subcategory.id topic.id %}{% endif %}" 
+                          enctype="multipart/form-data" 
+                          id="create-subtopic-form">
+                        {% csrf_token %}
+                        {{ form.media }}
+
+                        <!-- Campo de Título -->
+                        <div class="form-group">
+                            <label for="{{ form.title.id_for_label }}">Título</label>
+                            {{ form.name }}
+                            {% for error in form.title.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Campo Tópico -->
+                        <div class="form-group">
+                            <label for="{{ form.topic.id_for_label }}">Tópico</label>
+                            {{ form.topic }}
+                            {% for error in form.topic.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Campo de Imagem -->
+                        <div class="form-group">
+                            <label for="{{ form.image.id_for_label }}">Imagem</label>
+                            {{ form.imagem }}
+                            {% for error in form.image.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Campo de Conteúdo -->
+                        <div class="form-group">
+                            <label for="{{ form.content.id_for_label }}">Conteúdo</label>
+                            {{ form.content }}
+                            {% for error in form.content.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Botões de Ação -->
+                        <div class="button-group d-flex justify-content-between mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                {% if subtopic %}Atualizar{% else %}Salvar{% endif %}
+                            </button>
+                            <a href="{% url 'list_subtopic' section_id=section.id category_id=category.id subcategory_id=subcategory.id topic_id=topic.id %}" class="btn btn-secondary">Voltar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

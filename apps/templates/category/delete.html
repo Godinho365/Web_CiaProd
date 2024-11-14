@@ -1,0 +1,30 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Deletar Categoria{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10 col-sm-12">
+            <!-- Card para deletar a categoria -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-1">Deletar Categoria: {{ category.name }}</h2>
+                </div>
+                <div class="card-body">
+                    <p>Você tem certeza que deseja deletar a categoria <strong>{{ category.name }}</strong>?</p>
+                    <p>Esta ação não pode ser desfeita.</p>
+                    <form method="post" id="delete-category-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="section_id" value="{{ category.section.id }}">
+                        <div class="button-group d-flex justify-content-between mt-4">
+                            <button type="submit" class="btn btn-danger">Deletar</button>
+                            <a href="{% url 'list_category' category.section.id %}" class="btn btn-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

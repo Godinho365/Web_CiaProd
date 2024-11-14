@@ -1,0 +1,95 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Ordenar Instruções</h5>
+                    <!-- Botão de Voltar -->
+                    <a href="{% url 'list_instruction' section_id category_id subcategory_id topic_id subtopic_id %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="order-form">
+                        {% csrf_token %}
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="sortable-instructions">
+                                <thead>
+                                    <tr>
+                                        <th>Título</th>
+                                        <th>Ações</th> <!-- Coluna para as setas -->
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for instruction in instructions %}
+                                        <tr data-id="{{ instruction.id }}" class="sortable-row">
+                                            <td>{{ instruction.title }}</td>
+                                            <td>
+                                                <!-- Setas para cima e para baixo -->
+                                                <button type="button" class="btn btn-link move-up" data-id="{{ instruction.id }}">&#8593;</button>
+                                                <button type="button" class="btn btn-link move-down" data-id="{{ instruction.id }}">&#8595;</button>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="2">Nenhuma instrução encontrada.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <input type="hidden" name="instruction_ids" id="instruction_ids">
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(function() {
+        // Funções para mover as instruções para cima e para baixo
+        $('#sortable-instructions').on('click', '.move-up', function() {
+            var row = $(this).closest('tr');
+            var prevRow = row.prev('tr.sortable-row');
+
+            if (prevRow.length) {
+                row.insertBefore(prevRow);
+                updateOrder();
+            }
+        });
+
+        $('#sortable-instructions').on('click', '.move-down', function() {
+            var row = $(this).closest('tr');
+            var nextRow = row.next('tr.sortable-row');
+
+            if (nextRow.length) {
+                row.insertAfter(nextRow);
+                updateOrder();
+            }
+        });
+
+        function updateOrder() {
+            var order = [];
+            $('#sortable-instructions tbody tr.sortable-row').each(function() {
+                order.push($(this).data('id'));
+            });
+            $('#instruction_ids').val(order.join(',')); // Atualiza o campo oculto com a nova ordem
+        }
+
+        // Submissão do formulário
+        $('#order-form').on('submit', function() {
+            if ($('#instruction_ids').val() === '') {
+                alert('Por favor, arraste e ordene as instruções antes de enviar.');
+                return false; // Não envia o formulário
+            }
+        });
+    });
+</script>
+
+{% endblock %}

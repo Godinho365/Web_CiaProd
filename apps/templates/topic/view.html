@@ -1,0 +1,132 @@
+{% extends "layouts/base.html" %} {% block content %}
+<div class="container-fluid">
+  <div class="header-body">
+    <div class="row align-items-center py-4">
+      <div class="col-lg-12 col-12">
+        <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+          <ol class="breadcrumb breadcrumb-links breadcrumb-dark m-0">
+            <!-- Home link -->
+            <li class="breadcrumb-item">
+              <a href="{% url 'list_section' %}">
+                <i class="fas fa-home"></i>
+              </a>
+            </li>
+
+            <!-- Section link -->
+            <li class="breadcrumb-item">
+              <a href="{% url 'list_category' section.id %}"
+                >{{ section.title }}</a
+              >
+            </li>
+
+            <!-- Category link or placeholder -->
+            <li class="breadcrumb-item">
+              {% if category and category.section %}
+              <a
+                href="{% url 'list_subcategory' section_id=category.section.id category_id=category.id %}"
+                >{{ category.name }}</a
+              >
+              {% else %}
+              <span>Categorias</span>
+              {% endif %}
+            </li>
+
+            <!-- Subcategory link or placeholder -->
+            <li class="breadcrumb-item">
+              {% if subcategory %}
+              <a
+                href="{% url 'list_topic' section.id category.id subcategory.id %}"
+                >{{ subcategory.name }}</a
+              >
+              {% else %}
+              <span>Subcategorias</span>
+              {% endif %}
+            </li>
+
+            <!-- Current topic -->
+            <li class="breadcrumb-item active" aria-current="page">
+              {{ topic.name }}
+            </li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="text-center mb-3">{{ topic.name }}</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              {% if topic.author %}
+              <div class="card text-center mb-3">
+                <div class="card-body">
+                  <h6 class="card-title"><strong>Autor:</strong></h6>
+                  <p class="card-text">{{ topic.author.username }}</p>
+                </div>
+              </div>
+              {% else %}
+              <div class="card text-center mb-3">
+                <div class="card-body">
+                  <h6 class="card-title"><strong>Autor:</strong></h6>
+                  <p class="card-text">Admin</p>
+                </div>
+              </div>
+              {% endif %}
+
+              <div class="card text-center mb-3">
+                <div class="card-body">
+                  <h6 class="card-title"><strong>Data de Criação:</strong></h6>
+                  <p class="card-text">
+                    {{ topic.created_at|date:"d/m/Y H:i" }}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <div class="card text-center">
+                <div class="card-body">
+                  <h6 class="card-title">
+                    <strong>Contagem de Visualizações:</strong>
+                  </h6>
+                  <p class="card-text">{{ topic.view_count }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row mt-4">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-body">
+                  <h6 class="card-title"><strong>Conteúdo:</strong></h6>
+                  <p class="card-text">{{ topic.content|safe }}</p>
+                  <!-- Exibindo conteúdo do tópico -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botão para voltar -->
+          <div class="row mt-4">
+            <div class="col-md-12 text-left">
+              <a
+                href="{% url 'list_topic' section.id category.id subcategory.id %}"
+                class="btn btn-secondary"
+              >
+                <i class="fas fa-arrow-left"></i> Voltar
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

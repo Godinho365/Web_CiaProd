@@ -1,0 +1,92 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Criar Subcategoria{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10 col-sm-12">
+            <!-- Card para criar ou editar subcategoria -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-1">{% if subcategory %}Editando Subcategoria{% else %}Criar Subcategoria{% endif %}</h2>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        <div class="alert alert-success" role="alert">
+                            {% for message in messages %}
+                                {{ message }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <form method="post" 
+                          action="{% if subcategory %}{% url 'update_subcategory' subcategory.id %}{% else %}{% url 'create_subcategory' section.id category.id %}{% endif %}" 
+                          enctype="multipart/form-data" 
+                          id="create-subcategory-form">
+                        {% csrf_token %}
+                        {{ form.media }}
+
+                        <!-- Campo Nome -->
+                        <div class="form-group">
+                            <label for="{{ form.name.id_for_label }}">Nome</label>
+                            {{ form.name }}  <!-- Campo de nome -->
+                            {% for error in form.name.errors %}
+                                <div class="error text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Campo Seção -->
+                        <div class="form-group">
+                            <label for="{{ form.section.id_for_label }}">Seção</label>
+                            {{ form.section }}  <!-- Campo de seção, deve ser um campo de seleção -->
+                            <input type="hidden" name="section_id" value="{{ section.id }}">  <!-- Campo oculto para seção -->
+                            {% for error in form.section.errors %}
+                                <div class="error text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Campo Categoria -->
+                        <div class="form-group">
+                            <label for="{{ form.category.id_for_label }}">Categoria</label>
+                            {{ form.category }}  <!-- Campo de categoria, deve ser um campo de seleção -->
+                            <input type="hidden" name="category_id" value="{{ category.id }}">  <!-- Campo oculto para categoria -->
+                            {% for error in form.category.errors %}
+                                <div class="error text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Campo Imagem -->
+                        <div class="form-group">
+                            <label for="{{ form.imagem.id_for_label }}">Imagem</label>
+                            {{ form.imagem }}  <!-- Campo de imagem -->
+                            {% for error in form.imagem.errors %}
+                                <div class="error text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Campo Content -->
+                        <div class="form-group">
+                            <label for="{{ form.content.id_for_label }}">Conteúdo</label>
+                            {{ form.content }}  <!-- Campo de conteúdo -->
+                            {% for error in form.content.errors %}
+                                <div class="error text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="button-group d-flex justify-content-between mt-4">
+                            {% if subcategory %}
+                                <button type="submit" class="btn btn-primary">Salvar</button>
+                                <a href="{% url 'list_subcategory' section.id category.id %}" class="btn btn-secondary">Voltar</a>
+                            {% else %}
+                                <button type="submit" class="btn btn-primary">Salvar</button>
+                                <a href="{% url 'list_subcategory' section.id category.id %}" class="btn btn-secondary">Voltar</a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<!-- Header -->
+<div class="container-fluid">
+    <div class="header-body">
+        <div class="row align-items-center py-4">
+            <div class="col-lg-6 col-7">
+                <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+                    <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+                        <li class="breadcrumb-item active"><i class="fas fa-home"></i></a></li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title" style="text-transform: uppercase; margin: 0;">Seções</h5>
+                    <a href="{% url 'create_section' %}" class="btn btn-primary">
+                        <i class="fas fa-plus-circle"></i> Nova
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for section in page_obj %}
+                            <div class="col-md-4 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-img-container" style="height: 200px; display: flex; justify-content: center; align-items: center;">
+                                        <a href="{% url 'list_category' section.id %}" class="d-block w-100 h-100 text-center">
+                                            {% if section.imagem %}
+                                                <img src="{{ section.imagem.url }}" class="card-img-top" alt="{{ section.title }}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                            {% else %}
+                                                <img src="https://via.placeholder.com/150.png?text=Sem+Imagem" class="card-img-top" alt="Imagem padrão" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                            {% endif %}
+                                        </a>
+                                    </div>
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">
+                                            <a href="{% url 'list_category' section.id %}" class="text-decoration-none text-dark">{{ section.title }}</a>
+                                        </h5>
+                                        {% if user.is_superuser %}
+                                            <div class="d-flex justify-content-center">
+                                                <a href="{% url 'update_section' section.id %}" class="btn btn-sm btn-primary me-2">
+                                                    <i class="fas fa-edit"></i> Editar
+                                                </a>
+                                                <form action="{% url 'delete_section' section.id %}" method="post" style="display:inline;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-danger">
+                                                        <i class="fas fa-trash-alt"></i> Excluir
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="col-md-12 text-center">
+                                <p>Nenhuma seção encontrada.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Paginação -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination justify-content-center">
+                                    {% if page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1" aria-label="First">
+                                                <span aria-hidden="true">&laquo;&laquo;</span>
+                                            </a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                                <span aria-hidden="true">&laquo;</span>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+
+                                    {% for page_num in page_obj.paginator.page_range %}
+                                        {% if page_obj.number == page_num %}
+                                            <li class="page-item active" aria-current="page">
+                                                <a class="page-link" href="#">{{ page_num }}</a>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                                                <span aria-hidden="true">&raquo;</span>
+                                            </a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                                                <span aria-hidden="true">&raquo;&raquo;</span>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
