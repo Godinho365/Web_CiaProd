@@ -1,0 +1,45 @@
+<!-- templates/accounts/FormGroup.html -->
+{% extends 'layouts/base.html' %} {% block content %}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-header text-white">
+          <h3 class="card-title mb-0">
+            {% if group %} Editar Grupo {% else %} Criar Novo Grupo {% endif %}
+          </h3>
+        </div>
+        <div class="card-body">
+          <form method="POST">
+            {% csrf_token %}
+
+            <!-- Exibe erros do formulário, se houver -->
+            {% if form.errors %}
+            <div class="alert alert-danger">
+              <ul>
+                {% for field in form %} {% for error in field.errors %}
+                <li>{{ error }}</li>
+                {% endfor %} {% endfor %}
+              </ul>
+            </div>
+            {% endif %}
+
+            <!-- Renderiza os campos do formulário -->
+            <div class="form-group">{{ form.as_p }}</div>
+
+            <!-- Botão de submissão -->
+            <button type="submit" class="btn btn-primary">
+              {% if group %} Atualizar {% else %} Criar {% endif %}
+            </button>
+
+            <!-- Botão de voltar à lista de grupos -->
+            <a href="{% url 'list_groups' %}" class="btn btn-secondary ml-3">
+              Voltar
+            </a>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

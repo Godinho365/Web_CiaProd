@@ -7,7 +7,10 @@ from .models import Category, Section, Subcategory, Instruction, Topic, Subtopic
 from django.core.paginator import Paginator
 from django.db.models import Count
 from .models import Section, Category, Subcategory, Instruction, Topic, Subtopic
-
+import reversion
+from reversion.models import Version
+from datetime import datetime
+from django.db import transaction
 
 
 def list_section(request):
@@ -634,6 +637,7 @@ def create_subtopic(request, section_id, category_id, subcategory_id, topic_id):
         'topic': topic,
     })
 
+@reversion.create_revision()  # Inicia o contexto de versão
 def update_subtopic(request, section_id, category_id, subcategory_id, topic_id, id):
     subtopic = get_object_or_404(Subtopic, id=id)
     section = get_object_or_404(Section, id=section_id)
@@ -644,7 +648,13 @@ def update_subtopic(request, section_id, category_id, subcategory_id, topic_id, 
     if request.method == 'POST':
         form = SubtopicForm(request.POST, request.FILES, instance=subtopic)
         if form.is_valid():
+            # Salva a versão anterior do objeto
             form.save()
+
+            # Registra o usuário que fez a modificação
+            reversion.set_user(request.user)
+            reversion.set_comment('Subtópico atualizado.')  # Comenta a alteração
+
             messages.success(request, 'Subtópico atualizado com sucesso!')
             return redirect('list_subtopic', section_id=section_id, category_id=category_id, subcategory_id=subcategory_id, topic_id=topic_id)
     else:
@@ -659,21 +669,24 @@ def update_subtopic(request, section_id, category_id, subcategory_id, topic_id, 
         'topic': topic,
     })
 
+@reversion.create_revision()
 def delete_subtopic(request, section_id, category_id, subcategory_id, topic_id, id):
     subtopic = get_object_or_404(Subtopic, id=id)
 
     if request.method == 'POST':
-        subtopic.delete()
-        messages.success(request, 'Subtópico deletado com sucesso!')
-        return redirect('list_subtopic', section_id=section_id, category_id=category_id, subcategory_id=subcategory_id, topic_id=topic_id)
+        with transaction.atomic():  # Usando transação atômica para garantir integridade
+            # Registra o usuário e o comentário para a revisão
+            subtopic.save()
+            reversion.set_user(request.user)
+            reversion.set_comment('Subtópico deletado.')
+            # Agora exclui o objeto
+            subtopic.delete()
+            # Mensagem de sucesso
+            messages.success(request, 'Subtópico deletado com sucesso!')
+            return redirect('list_subtopic', section_id=section_id, category_id=category_id, subcategory_id=subcategory_id, topic_id=topic_id)
 
-    return render(request, 'subtopic_confirm_delete.html', {
-        'subtopic': subtopic,
-        'section_id': section_id,
-        'category_id': category_id,
-        'subcategory_id': subcategory_id,
-        'topic_id': topic_id,
-    })
+    # Se não for POST, realiza a exclusão diretamente
+    return redirect('list_subtopic', section_id=section_id, category_id=category_id, subcategory_id=subcategory_id, topic_id=topic_id)
 
 def list_subtopic(request, section_id, category_id, subcategory_id, topic_id):
     topic = get_object_or_404(Topic, id=topic_id)
@@ -689,15 +702,23 @@ def list_subtopic(request, section_id, category_id, subcategory_id, topic_id):
 
     # Se houver um termo de busca, filtramos os subtópicos pelo nome
     if search_query:
-        subtopics = subtopics.filter(name__icontains=search_query)  # Filtra pelo nome do subtópico
+        subtopics = subtopics.filter(name__icontains=search_query)
 
-    # Adiciona paginação
-    paginator = Paginator(subtopics, 3)  # 3 subtópicos por página
+    # Paginando os subtópicos
+    paginator = Paginator(subtopics, 3)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # Obtendo as versões válidas do subtópico
+    subtopic_versions = []
+    for subtopic in subtopics:
+        versions = reversion.models.Version.objects.get_for_object(subtopic)
+        for version in versions:
+            if version.object_id:  # Garantir que o subtópico está associado à versão
+                subtopic_versions.append(version)
+
     return render(request, 'subtopic/list.html', {
-        'subtopics': page_obj,  # Passa os subtópicos paginados
+        'subtopics': page_obj,
         'topic': topic,
         'section': section,
         'category': category,
@@ -705,7 +726,8 @@ def list_subtopic(request, section_id, category_id, subcategory_id, topic_id):
         'section_id': section_id,
         'category_id': category_id,
         'subcategory_id': subcategory_id,
-        'search_query': search_query,  # Passa o termo de busca para o template
+        'search_query': search_query,
+        'subtopic_versions': subtopic_versions,  # Passa as versões para o template
     })
 
 
@@ -721,6 +743,34 @@ def view_subtopic(request, section_id, category_id, subcategory_id, topic_id, su
     subtopic.view_count += 1
     subtopic.save()
 
+    # Obter o histórico de versões do subtópico
+    versions = Version.objects.get_for_object(subtopic)
+
+    # Verifica se há filtros de data
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    # Filtro para a data inicial (start_date)
+    if start_date:
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')  # Converte a data para datetime
+            versions = versions.filter(revision__date_created__gte=start_date)  # Filtro para data inicial
+        except ValueError:
+            versions = versions.none()  # Caso a data esteja no formato incorreto
+
+    # Filtro para a data final (end_date)
+    if end_date:
+        try:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')  # Converte a data para datetime
+            versions = versions.filter(revision__date_created__lte=end_date)  # Filtro para data final
+        except ValueError:
+            versions = versions.none()  # Caso a data esteja no formato incorreto
+
+    # Paginação: configura o Paginator e obtém a página atual
+    paginator = Paginator(versions, 3)  # 3 versões por página (ajuste conforme necessário)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     # Renderiza o template com as variáveis necessárias
     return render(request, 'subtopic/view.html', {
         'section': section,
@@ -728,7 +778,44 @@ def view_subtopic(request, section_id, category_id, subcategory_id, topic_id, su
         'subcategory': subcategory,
         'topic': topic,
         'subtopic': subtopic,
+        'page_obj': page_obj,  # Passa o objeto de página com as versões paginadas
     })
+
+@reversion.create_revision()
+def restore_subtopic(request, subtopic_id, version_id):
+    print(f"Metodo da requisição: {request.method}")  # Adicione isso
+    subtopic = get_object_or_404(Subtopic, id=subtopic_id)
+
+    if request.method == 'GET':
+        # Executa restauração
+        try:
+            version = reversion.models.Version.objects.get(id=version_id, object_id=subtopic.id)
+            print(f"Versão encontrada: {version}")
+        except reversion.models.Version.DoesNotExist:
+            messages.error(request, 'Versão não encontrada.')
+            return redirect('view_subtopic', subtopic_id=subtopic_id)
+
+        # Restaura a versão
+        version.revision.revert()
+        reversion.set_user(request.user)
+        reversion.set_comment('Versão restaurada.')
+        messages.success(request, 'Versão restaurada com sucesso!')
+
+        return redirect('view_subtopic', 
+                         section_id=subtopic.topic.category.section.id, 
+                         category_id=subtopic.topic.category.id,
+                         subcategory_id=subtopic.topic.subcategory.id,
+                         topic_id=subtopic.topic.id,
+                         subtopic_id=subtopic.id)
+
+    # Se o método não for POST, redireciona para a lista de subtópicos
+    return redirect('list_subtopic', 
+                    section_id=subtopic.topic.category.section.id, 
+                    category_id=subtopic.topic.category.id,
+                    subcategory_id=subtopic.topic.subcategory.id,
+                    topic_id=subtopic.topic.id)
+
+
 
 
 

@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from django.urls import path
 from .views import *
 
+
 urlpatterns = [
     path('section-list/', list_section, name='list_section'),
     path('section/create/', create_section, name='create_section'),
@@ -28,7 +29,6 @@ urlpatterns = [
     path('section/<int:section_id>/category/<int:category_id>/subcategory/<int:subcategory_id>/topic/<int:topic_id>/subtopic/<int:subtopic_id>/instructions/update/<int:id>/', update_instruction, name='update_instruction'),  
     path('section/<int:section_id>/category/<int:category_id>/subcategory/<int:subcategory_id>/topic/<int:topic_id>/subtopic/<int:subtopic_id>/instructions/delete/<int:id>/', delete_instruction, name='delete_instruction'),
     path('instruction/<int:section_id>/<int:category_id>/<int:subcategory_id>/<int:topic_id>/<int:subtopic_id>/<int:instruction_id>/view/', view_instruction, name='view_instruction'),
-  # URL para a view 
     path('sections/<int:section_id>/categories/<int:category_id>/subcategories/<int:subcategory_id>/topics/<int:topic_id>/subtopics/<int:subtopic_id>/order_instructions/', order_instructions, name='order_instruction'),
 
 
@@ -43,8 +43,10 @@ urlpatterns = [
     path('section/<int:section_id>/category/<int:category_id>/subcategory/<int:subcategory_id>/topic/<int:topic_id>/subtopics/<int:id>/delete/',delete_subtopic,name='delete_subtopic'),
     path('section/<int:section_id>/category/<int:category_id>/subcategory/<int:subcategory_id>/topic/<int:topic_id>/subtopic-list/',list_subtopic,name='list_subtopic'),
     path('section/<int:section_id>/category/<int:category_id>/subcategory/<int:subcategory_id>/topic/<int:topic_id>/subtopic/<int:subtopic_id>/view/', view_subtopic, name='view_subtopic'),
-    
+    path('subtopic/<int:subtopic_id>/restore/<int:version_id>/', restore_subtopic, name='restore_subtopic'),
 
+    
+   
 
 
 ]

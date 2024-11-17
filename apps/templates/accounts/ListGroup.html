@@ -1,0 +1,84 @@
+{% extends 'layouts/base.html' %}
+{% block content %}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-12">
+      <div class="card shadow-sm">
+        <div class="card-header text-white d-flex justify-content-between align-items-center">
+          <h3 class="card-title mb-0">Lista de Grupos</h3>
+          <a href="{% url 'create_group' %}" class="btn btn-primary">Novo Grupo</a>
+        </div>
+        <div class="card-body">
+          {% if group_data %}
+          <div class="table-responsive">
+            <table class="table align-items-center table-flush">
+              <thead class="thead-light">
+                <tr>
+                  <th scope="col" class="sort" data-sort="name">Grupo</th>
+                  <th scope="col" class="sort" data-sort="users">Quantidade</th>
+                  <th scope="col" class="sort" data-sort="completion">Taxa de usuários</th>
+                  <th scope="col">Ações</th>  <!-- Coluna para ações de editar e excluir -->
+                </tr>
+              </thead>
+              <tbody class="list">
+                {% for data in group_data %}
+                <tr>
+                  <th scope="row">
+                    <span class="name mb-0 text-sm">{{ data.group.name }}</span>
+                  </th>
+                  <td>{{ data.user_count }} Usuários</td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <span class="completion mr-2">{{ data.percentage|floatformat:1 }}%</span>
+                      <div>
+                        <div class="progress">
+                          <div class="progress-bar
+                            {% if data.percentage < 50 %}
+                              bg-danger  <!-- Vermelho -->
+                            {% elif data.percentage >= 50 and data.percentage <= 60 %}
+                              bg-warning  <!-- Amarelo -->
+                            {% else %}
+                              bg-success  <!-- Verde -->
+                            {% endif %}
+                          "
+                               role="progressbar"
+                               aria-valuenow="{{ data.percentage }}"
+                               aria-valuemin="0"
+                               aria-valuemax="100"
+                               style="width: {{ data.percentage }}%">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>  <!-- Coluna para os botões de editar e excluir -->
+                    <div class="dropdown">
+                      <a class="btn btn-sm btn-icon-only text-light" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v"></i>
+                      </a>
+                      <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
+                        <a class="dropdown-item" href="{% url 'edit_group' data.group.id %}">Editar</a>
+                        <a class="dropdown-item" href="{% url 'delete_group' data.group.id %}" onclick="return confirm('Tem certeza de que deseja excluir este grupo?');">Excluir</a>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center">Nenhum grupo encontrado.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <p class="alert alert-info">Não há grupos cadastrados no momento.</p>
+          {% endif %}
+
+          <a href="{% url 'home' %}" class="btn btn-secondary mt-3">Voltar</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,205 @@
+{% extends 'layouts/base.html' %} {% block content %}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-12">
+      <!-- Filtro de tempo -->
+      <div class="d-flex justify-content-center mb-4">
+        <select
+          id="time-filter"
+          class="form-select w-auto"
+          onchange="updateChartData()"
+        >
+          <option value="day" selected>Por Dia</option>
+          <option value="week">Por Semana</option>
+          <option value="month">Por Mês</option>
+          <option value="year">Por Ano</option>
+        </select>
+      </div>
+
+      <!-- Card com o gráfico -->
+      <div class="card bg-light shadow-sm">
+        <div class="card-body">
+          <h3 class="mb-4 text-center text-dark">Entradas no Sistema</h3>
+          <div class="chart">
+            <!-- Wrapper do gráfico -->
+            <canvas id="chart-sales-dark" class="chart-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <h4 class="mt-5 text-center">Usuários por Período</h4>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Obtendo os dados passados pela view
+  var days = JSON.parse("{{ days|escapejs }}");
+  var entries = JSON.parse("{{ entries|escapejs }}");
+  var usersPerDay = JSON.parse("{{ users_per_day|escapejs }}"); // Dados de usuários por dia
+
+  console.log("Users per day:", usersPerDay); // Debugging: Verificando se os dados estão corretos
+
+  var chart;
+
+  // Função para atualizar os dados do gráfico conforme o filtro de tempo
+  function updateChartData() {
+    var filter = document.getElementById("time-filter").value;
+
+    // Ajusta os dados conforme o filtro
+    var groupedData = groupDataByPeriod(filter);
+
+    // Cria o gráfico com os dados agrupados
+    if (chart) {
+      chart.destroy();
+    }
+
+    var ctx = document.getElementById("chart-sales-dark").getContext("2d");
+    chart = new Chart(ctx, {
+      type: "line", // Tipo de gráfico
+      data: {
+        labels: groupedData.labels, // Labels (datas, semanas, meses ou anos)
+        datasets: [
+          {
+            label: "Entradas por período",
+            data: groupedData.entries, // Número de entradas
+            borderColor: "rgba(75, 192, 192, 1)",
+            backgroundColor: "rgba(75, 192, 192, 0.2)",
+            borderWidth: 1,
+            fill: true,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text:
+                filter === "day"
+                  ? "Dia"
+                  : filter === "week"
+                  ? "Semana"
+                  : filter === "month"
+                  ? "Mês"
+                  : "Ano",
+              color: "rgba(0, 0, 0, 0.6)",
+            },
+          },
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: "Número de Entradas",
+              color: "rgba(0, 0, 0, 0.6)",
+            },
+          },
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              // Customizando o conteúdo do tooltip
+              label: function (tooltipItem) {
+                var period = groupedData.labels[tooltipItem.dataIndex]; // O período do eixo X
+                var userEntries = usersPerDay[period] || {}; // Usuários e entradas para esse período
+
+                if (Object.keys(userEntries).length === 0) {
+                  return "Sem entradas para esse período.";
+                }
+
+                // Cria o texto de cada usuário com a quantidade de entradas
+                var userNamesText = Object.keys(userEntries).map(function (
+                  user
+                ) {
+                  return `Usuário: ${user} | Entradas: ${userEntries[user]}`;
+                });
+
+                return userNamesText;
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  // Função para agrupar os dados conforme o período
+  function groupDataByPeriod(period) {
+    let groupedLabels = [];
+    let groupedEntries = [];
+    let groupedUsers = {};
+
+    // Array de nomes dos meses
+    const months = [
+      "Janeiro",
+      "Fevereiro",
+      "Março",
+      "Abril",
+      "Maio",
+      "Junho",
+      "Julho",
+      "Agosto",
+      "Setembro",
+      "Outubro",
+      "Novembro",
+      "Dezembro",
+    ];
+
+    // Agrupar por dia, semana, mês ou ano
+    days.forEach(function (day, index) {
+      let label,
+        entry = entries[index];
+
+      if (period === "day") {
+        label = day;
+      } else if (period === "week") {
+        let weekNumber = getWeekNumber(new Date(day)); // Calculando o número da semana
+        label = "Semana " + weekNumber;
+      } else if (period === "month") {
+        let month = new Date(day).getMonth(); // Mês (0-11, então não precisa adicionar 1)
+        label = months[month]; // Exibindo o nome do mês
+      } else if (period === "year") {
+        let year = new Date(day).getFullYear(); // Ano
+        label = `Ano ${year}`;
+      }
+
+      if (!groupedLabels.includes(label)) {
+        groupedLabels.push(label);
+        groupedEntries.push(entry);
+        groupedUsers[label] = {};
+      } else {
+        const labelIndex = groupedLabels.indexOf(label);
+        groupedEntries[labelIndex] += entry;
+      }
+
+      // Agrupando usuários
+      let userEntries = usersPerDay[day] || {};
+      Object.keys(userEntries).forEach(function (user) {
+        if (!groupedUsers[label][user]) {
+          groupedUsers[label][user] = userEntries[user];
+        } else {
+          groupedUsers[label][user] += userEntries[user];
+        }
+      });
+    });
+
+    return {
+      labels: groupedLabels,
+      entries: groupedEntries,
+      usersPerDay: groupedUsers,
+    };
+  }
+
+  // Função para calcular o número da semana
+  function getWeekNumber(date) {
+    var firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+    var pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+    return Math.ceil((pastDaysOfYear + 1) / 7);
+  }
+
+  // Inicializa o gráfico com dados por dia
+  updateChartData();
+</script>
+{% endblock %}

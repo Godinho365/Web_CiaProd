@@ -83,7 +83,7 @@
                     <a href="{% url 'update_subtopic' section.id category.id subcategory.id topic.id subtopic.id %}" class="btn btn-sm btn-primary me-2">
                       <i class="fas fa-edit"></i> Editar
                     </a>
-                    <form action="{% url 'delete_subtopic' section.id category.id subcategory.id topic.id subtopic.id %}" method="post" style="display: inline">
+                    <form method="POST" action="{% url 'delete_subtopic' section.id category.id subcategory.id topic.id subtopic.id %}" method="post" style="display: inline">
                       {% csrf_token %}
                       <button type="submit" class="btn btn-sm btn-danger">
                         <i class="fas fa-trash-alt"></i> Excluir

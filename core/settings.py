@@ -7,6 +7,10 @@ import os
 from decouple import config
 from unipath import Path
 
+import sys
+sys.path.append('apps/scripts')
+
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = Path(__file__).parent
 CORE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -31,6 +35,10 @@ INSTALLED_APPS = [
     'apps.home',  # Enable the inner home (home)
     'apps.doc',
     'ckeditor',
+    'guardian',
+    'apps.scripts',
+    'apps.authentication',
+    'reversion'
 ]
 
 MIDDLEWARE = [
@@ -42,6 +50,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'reversion.middleware.RevisionMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -114,6 +123,13 @@ MEDIA_URL = '/media/'
 # Extra places for collectstatic to find static files.
 STATICFILES_DIRS = (
     os.path.join(CORE_DIR, 'apps/static'),
+)
+
+# settings.py
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',  # Backend padrão de autenticação
+    'guardian.backends.ObjectPermissionBackend',  # Permissões do Guardian
 )
 
 

@@ -1,5 +1,8 @@
 from django.contrib import admin
 from .models import Instruction, Section, Category, Subcategory, Tag
+import reversion
+
+
 
 @admin.register(Instruction)
 class InstructionAdmin(admin.ModelAdmin):
@@ -24,6 +27,7 @@ class SubcategoryAdmin(admin.ModelAdmin):
     list_display = ('name', 'category')
     list_filter = ('category',)  # Adiciona filtro por categoria
     search_fields = ('name', 'category__name')  # Adiciona campo de pesquisa
+
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):

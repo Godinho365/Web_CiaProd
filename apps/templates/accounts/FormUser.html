@@ -1,0 +1,35 @@
+{% extends 'layouts/base.html' %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-header text-white">
+          <h3 class="card-title mb-0">
+            {% if user %}
+              Editar Usuário: {{ user.username }}
+            {% else %}
+              Criar Novo Usuário
+            {% endif %}
+          </h3>
+        </div>
+        <div class="card-body">
+          <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">
+              {% if user %}
+                Salvar Alterações
+              {% else %}
+                Criar Usuário
+              {% endif %}
+            </button>
+            <a href="{% url 'list_users' %}" class="btn btn-secondary">Cancelar</a>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

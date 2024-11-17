@@ -12,5 +12,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),          # Django admin route
     path("", include("apps.authentication.urls")), # Auth routes - login / register
     path("", include("apps.home.urls")),  # <- Adicione a vírgula aqui
-    path('doc/', include('apps.doc.urls')),  # UI Kits Html files
+    path('doc/', include('apps.doc.urls')),
+    path('auth/', include('apps.authentication.urls')),  # UI Kits Html files
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
