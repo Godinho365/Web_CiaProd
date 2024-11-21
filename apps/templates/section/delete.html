@@ -14,7 +14,7 @@
                 <div class="card-body">
                     <p>Você tem certeza que deseja deletar a seção <strong>{{ section.title }}</strong>?</p>
                     <p>Esta ação não pode ser desfeita.</p>
-                    <form method="post" id="delete-section-form">
+                    <form method="POST" id="delete-section-form">
                         {% csrf_token %}
                         <div class="button-group d-flex justify-content-between mt-4">
                             <button type="submit" class="btn btn-danger">Deletar</button>

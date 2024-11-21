@@ -35,16 +35,49 @@
 
     {% include "includes/navigation.html" %}
 
-    <!-- Bloco de Mensagens -->
-    {% if messages %}
-        <div class="container mt-4">
-            <div class="alert alert-success">
-                {% for message in messages %}
-                    <div>{{ message }}</div>
-                {% endfor %}
+ <!-- Bloco de Mensagens -->
+{% if messages %}
+<div class="container mt-4">
+    <!-- Mensagem de Sucesso -->
+    {% for message in messages %}
+        {% if message.tags == 'success' %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <span class="alert-icon"><i class="ni ni-like-2"></i></span>
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
+        {% endif %}
+    {% endfor %}
+    
+    <!-- Mensagem de Alerta -->
+    {% for message in messages %}
+    {% if message.tags == 'warning' %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <!-- Ícone de erro -->
+            <span class="alert-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </span>
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
         </div>
     {% endif %}
+{% endfor %}
+
+</div>
+
+<!-- Script para desaparecer automaticamente -->
+<script type="text/javascript">
+    setTimeout(function() {
+        $(".alert").fadeOut("slow");
+    }, 5000); // 5000 milissegundos (5 segundos)
+</script>
+{% endif %}
+
+
 
     {% block content %}{% endblock content %}
 

@@ -1,5 +1,6 @@
 from dis import Instruction
 from pyexpat.errors import messages
+from venv import logger
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, render, redirect
 from .forms import CategoryForm, InstructionForm, OrderInstructionsForm, SectionForm, SubcategoryForm, TopicForm, SubtopicForm
@@ -11,6 +12,9 @@ import reversion
 from reversion.models import Version
 from datetime import datetime
 from django.db import transaction
+from django.contrib.auth.decorators import login_required
+from reversion.models import Revision
+from django.contrib.contenttypes.models import ContentType
 
 
 def list_section(request):
@@ -34,38 +38,86 @@ def list_section(request):
         'search_query': search_query,  # Passa a consulta de busca para o template
     })
 
+@reversion.create_revision()  # Inicia o contexto de versão para a criação
 def create_section(request):
     if request.method == 'POST':
         form = SectionForm(request.POST, request.FILES)  
         if form.is_valid():
-            form.save()
-            return redirect('list_section')  
+            # Inicia a transação de revisão
+            section = form.save(commit=False)  # Salva a instância sem persistir ainda
+            reversion.set_user(request.user)  # Registra o usuário que está criando
+            reversion.set_comment(f'Seção "{section.title}" criada por {request.user.username}.')  # Comentário sobre a criação
+            
+            # Salva a instância e adiciona à revisão
+            section.save()
+            reversion.add_to_revision(section)  # Adiciona a instância à revisão
+            
+            messages.success(request, f'A seção "{section.title}" foi criada com sucesso!')
+            return redirect('list_section')  # Redireciona para a lista de seções após a criação
     else:
         form = SectionForm()
-    
+
     # Passando None para section na criação
     return render(request, 'section/form.html', {'form': form, 'section': None})
 
+@reversion.create_revision()  # Inicia o contexto de versão
 def update_section(request, id):
     section = get_object_or_404(Section, id=id)  
+    
     if request.method == 'POST':
         form = SectionForm(request.POST, request.FILES, instance=section)
         if form.is_valid():
+            # Salva a versão anterior do objeto
             form.save()
-            return redirect('list_section')
+
+            # Registra o usuário que fez a modificação
+            reversion.set_user(request.user)  # Registra o usuário que fez a modificação
+            reversion.set_comment(f'Seção "{section.title}" atualizada por {request.user.username}.')  # Comentário com o nome do usuário
+
+            # Mensagem de sucesso
+            messages.success(request, 'Seção atualizada com sucesso!')
+            return redirect('list_section')  # Redireciona para a lista de seções
+
     else:
         form = SectionForm(instance=section)
     
     # Passando a seção encontrada para edição
     return render(request, 'section/form.html', {'form': form, 'section': section})
 
+@reversion.create_revision()  # Inicia o contexto de revisão
 def delete_section(request, id):
     section = get_object_or_404(Section, id=id)
+
     if request.method == 'POST':
-        section.delete()
-        messages.success(request, f'A seção "{section.title}" foi deletada com sucesso!')
-        return redirect('list_section')  
+        with transaction.atomic():  # Garante que todas as operações sejam atômicas
+            try:
+                # Verificar se a seção está associada a categorias ou subcategorias
+                if section.categories.exists():  # Verifica se há categorias associadas
+                    messages.warning(request, f'A seção "{section.title}" não pode ser deletada, pois há categorias associadas.')
+                    return redirect('list_section')
+                
+                
+                # Registrar o objeto no Reversion antes de excluí-lo
+                reversion.set_user(request.user)  # Define o usuário responsável
+                reversion.set_comment(f'Seção "{section.title}" deletada.')  # Adiciona um comentário
+
+                section.save()  # Salva o objeto para registrar sua revisão
+
+
+                # Excluir o objeto após confirmar que a revisão foi salva
+                section.delete()
+
+                # Mensagem de sucesso
+                messages.success(request, f'A seção "{section.title}" foi deletada com sucesso!')
+                return redirect('list_section')
+
+            except Exception as e:
+                # Lidar com falhas
+                messages.error(request, f"Erro ao deletar a seção: {e}")
+                return redirect('list_section')
+
     return render(request, 'section/delete.html', {'section': section})
+
 
 def list_category(request, section_id):
     # Obtém a seção com base no ID
@@ -92,6 +144,7 @@ def list_category(request, section_id):
         'search_query': search_query,  # Passa a consulta de busca para o template
     })
 
+@login_required
 def create_category(request, section_id):
     section = get_object_or_404(Section, id=section_id)  # Obtém a seção com o ID fornecido
     if request.method == 'POST':
@@ -99,36 +152,84 @@ def create_category(request, section_id):
         if form.is_valid():
             category = form.save(commit=False)
             category.section = section  # Associa a categoria à seção
+            category.author = request.user  # Associa o autor à categoria
             category.save()
+            messages.success(request, f'A seção "{category.name}" foi criada com sucesso!')
             return redirect('list_category', section_id=section.id)  # Redireciona para a lista de categorias
     else:
         form = CategoryForm(section_instance=section)  # Passa a seção como argumento
 
     return render(request, 'category/form.html', {'form': form, 'section': section})  # Passa a seção para o template
 
-def update_category(request, id):
-    category = get_object_or_404(Category, id=id)
+def update_category(request, section_id, id):
+    # Obtenha a seção associada ao section_id
+    section = get_object_or_404(Section, id=section_id)
+    # Obtenha a categoria associada ao id e à seção
+    category = get_object_or_404(Category, id=id, section=section)
+
     if request.method == 'POST':
         form = CategoryForm(request.POST, request.FILES, instance=category)
         if form.is_valid():
             form.save()
             messages.success(request, 'Categoria atualizada com sucesso!')
-            # Certifique-se de passar o ID da seção associada à categoria
-            return redirect('list_category', section_id=category.section.id)
+            # Redirecione para a lista de categorias da seção
+            return redirect('list_category', section_id=section.id)
     else:
         form = CategoryForm(instance=category)
 
-    return render(request, 'category/form.html', {'form': form, 'category': category})
+    return render(
+        request,
+        'category/form.html',
+        {
+            'form': form,
+            'category': category,
+            'section': section,
+        }
+    )
 
+
+@reversion.create_revision()  # Inicia o contexto de revisão
 def delete_category(request, id):
     category = get_object_or_404(Category, id=id)
     section_id = category.section.id  # Obtém o ID da seção associada à categoria
 
     if request.method == 'POST':
-        category.delete()  # Exclui a categoria
-        return redirect('list_category', section_id=section_id)  # Redireciona para a lista de categorias da seção
+        with transaction.atomic():  # Garante que todas as operações sejam atômicas
+            try:
+                # Verificar se a categoria está associada a subcategorias
+                if category.subcategories.exists():  # Use o related_name definido no modelo
+                    messages.warning(
+                        request,
+                        f'A categoria "{category.name}" não pode ser deletada, pois há subcategorias associadas.'
+                    )
+                    return redirect('list_category', section_id=section_id)
+                
+                # Registrar o objeto no Reversion antes de excluí-lo
+                reversion.set_user(request.user)  # Define o usuário responsável
+                reversion.set_comment(f'Categoria "{category.name}" deletada.')  # Adiciona um comentário
 
+                # Excluir a categoria
+                category.delete()
+
+                # Mensagem de sucesso
+                messages.success(
+                    request,
+                    f'A categoria "{category.name}" foi deletada com sucesso!'
+                )
+                return redirect('list_category', section_id=section_id)
+
+            except Exception as e:
+                # Lidar com falhas
+                messages.error(
+                    request,
+                    f"Erro ao deletar a categoria: {e.__class__.__name__} - {e}"
+                )
+                return redirect('list_category', section_id=section_id)
+
+    # Renderiza a página de confirmação de exclusão
     return render(request, 'category/delete.html', {'category': category})
+
+
  
 def view_category(request, category_id):
     # Obtendo a categoria pelo ID
@@ -180,6 +281,7 @@ def list_subcategory(request, section_id, category_id):
         'search_query': search_query,  # Passa a consulta de busca para o template
     })
 
+@login_required
 def create_subcategory(request, section_id, category_id):
     # Obtém a categoria com o ID fornecido
     category = get_object_or_404(Category, id=category_id)
@@ -193,6 +295,7 @@ def create_subcategory(request, section_id, category_id):
             subcategory = form.save(commit=False)
             subcategory.category = category  # Associa a subcategoria à categoria
             subcategory.section = section  # Associa a subcategoria à seção
+            subcategory.author = request.user  # Associa o autor à subcategoria
             subcategory.save()
             messages.success(request, 'Subcategoria criada com sucesso!')
             # Redireciona para a lista de subcategorias usando a categoria
@@ -228,17 +331,34 @@ def update_subcategory(request, id):
         'section': section     # Passa a seção para o template
     })
 
-def delete_subcategory(request, id):
+@reversion.create_revision()
+def delete_subcategory(request, section_id, category_id, id):
+    # Buscar a subcategoria pelo ID
     subcategory = get_object_or_404(Subcategory, id=id)
-    category_id = subcategory.category.id  # Obtém o ID da categoria associada à subcategoria
-    section_id = subcategory.category.section.id  # Obtém o ID da seção associada à categoria
 
+    # Verificar se a subcategoria está associada a algum conteúdo, como uma instrução
+    if subcategory.topics.exists():  # Substitua 'instructions' pelo campo que referencia 'Subcategory'
+        messages.warning(request, f'A subcategoria "{subcategory.name}" não pode ser deletada, pois está associada a instruções.')
+        return redirect('list_subcategory', section_id=section_id, category_id=category_id)
+
+    # Se for uma requisição POST, prossegue com a exclusão
     if request.method == 'POST':
-        subcategory.delete()  # Exclui a subcategoria
-        messages.success(request, 'Subcategoria excluída com sucesso!')
-        return redirect('list_subcategory', section_id=section_id, category_id=category_id)  # Redireciona para a lista de subcategorias da categoria
+        with transaction.atomic():  # Usando transação atômica para garantir integridade
+            # Registra o usuário e o comentário para a revisão
+            reversion.set_user(request.user)
+            reversion.set_comment('Subcategoria deletada.')
+            
+            # Exclui a subcategoria
+            subcategory.delete()
+            
+            # Mensagem de sucesso
+            messages.success(request, 'Subcategoria deletada com sucesso!')
+            return redirect('list_subcategory', section_id=section_id, category_id=category_id)
 
-    return render(request, 'subcategory/delete.html', {'subcategory': subcategory})  # Passa a subcategoria para o template
+    # Caso contrário, redireciona diretamente para a lista de subcategorias
+    return redirect('list_subcategory', section_id=section_id, category_id=category_id)
+
+
 
 def view_subcategory(request, subcategory_id):
     # Obtendo a subcategoria pelo ID
@@ -307,14 +427,15 @@ def list_instruction(request, section_id, category_id, subcategory_id, topic_id,
     })
 
 
-def create_instruction(request, section_id, category_id, subcategory_id, topic_id=None, subtopic_id=None):
-    # Obtém os objetos correspondentes a partir dos IDs fornecidos
+@login_required
+def create_instruction(request, section_id, category_id, subcategory_id, topic_id, subtopic_id):
+    # Obtém os objetos relacionados diretamente dos IDs fornecidos
     section = get_object_or_404(Section, id=section_id)
     category = get_object_or_404(Category, id=category_id)
     subcategory = get_object_or_404(Subcategory, id=subcategory_id)
-    topic = get_object_or_404(Topic, id=topic_id) if topic_id else None
-    subtopic = get_object_or_404(Subtopic, id=subtopic_id) if subtopic_id else None
-    
+    topic = get_object_or_404(Topic, id=topic_id)
+    subtopic = get_object_or_404(Subtopic, id=subtopic_id)
+
     if request.method == 'POST':
         form = InstructionForm(request.POST, request.FILES)
         if form.is_valid():
@@ -323,43 +444,49 @@ def create_instruction(request, section_id, category_id, subcategory_id, topic_i
             instruction.section = section
             instruction.category = category
             instruction.subcategory = subcategory
-            instruction.topic = topic  # Certifique-se de que o modelo Instruction tenha este campo
-            instruction.subtopic = subtopic  # E este campo também
-            instruction.author = request.user
+            instruction.topic = topic
+            instruction.subtopic = subtopic
+            instruction.author = request.user  # Define o autor
             instruction.save()
-            # Redireciona para a lista de instruções, incluindo todos os parâmetros necessários
+            messages.success(request, 'Instrução criada com sucesso!')
             return redirect('list_instruction', 
-                            section_id=section_id, 
-                            category_id=category_id, 
-                            subcategory_id=subcategory_id, 
-                            topic_id=topic_id, 
-                            subtopic_id=subtopic_id)
+                            section_id=section.id, 
+                            category_id=category.id, 
+                            subcategory_id=subcategory.id, 
+                            topic_id=topic.id, 
+                            subtopic_id=subtopic.id)  # Passa os IDs corretamente
     else:
-        # Preencher os campos automaticamente no formulário
-        initial_data = {
+        # Inicializa o formulário com os objetos relacionados
+        form = InstructionForm(initial={
             'section': section,
             'category': category,
             'subcategory': subcategory,
             'topic': topic,
-            'subtopic': subtopic,
-        }
-        form = InstructionForm(initial=initial_data)
+            'subtopic': subtopic
+        })
 
-    context = {
+    return render(request, 'instruction/form.html', {
         'form': form,
-        'instruction': None,  # Esta variável é None porque estamos criando uma nova instrução
-        'section_id': section.id,
-        'category_id': category.id,
-        'subcategory_id': subcategory.id,
-        'topic_id': topic.id if topic else None,
-        'subtopic_id': subtopic.id if subtopic else None,
-    }
+        'instruction': None,  # Para indicar que estamos criando uma nova instrução
+        'section': section,  # Passa o objeto Section para o template
+        'category': category,
+        'subcategory': subcategory,
+        'topic': topic,
+        'subtopic': subtopic,
+    })
 
     return render(request, 'instruction/form.html', context)
 
 def update_instruction(request, section_id, category_id, subcategory_id, topic_id, subtopic_id, id):
     instruction = get_object_or_404(Instruction, id=id)
     
+    # Obtém os objetos relacionados (se necessário para o contexto)
+    section = get_object_or_404(Section, id=section_id)
+    category = get_object_or_404(Category, id=category_id)
+    subcategory = get_object_or_404(Subcategory, id=subcategory_id)
+    topic = get_object_or_404(Topic, id=topic_id)
+    subtopic = get_object_or_404(Subtopic, id=subtopic_id)
+
     if request.method == 'POST':
         form = InstructionForm(request.POST, request.FILES, instance=instruction)
         if form.is_valid():
@@ -381,7 +508,12 @@ def update_instruction(request, section_id, category_id, subcategory_id, topic_i
         'category_id': category_id,
         'subcategory_id': subcategory_id,
         'topic_id': topic_id,
-        'subtopic_id': subtopic_id
+        'subtopic_id': subtopic_id,
+        'section': section,
+        'category': category,
+        'subcategory': subcategory,
+        'topic': topic,
+        'subtopic': subtopic,
     })
 
 def delete_instruction(request, section_id, category_id, subcategory_id, topic_id, subtopic_id, id):
@@ -500,7 +632,7 @@ def list_topic(request, section_id, category_id, subcategory_id):
     })
 
 
-# Criar Tópico
+@login_required
 def create_topic(request, section_id, category_id, subcategory_id):
     section = get_object_or_404(Section, id=section_id)
     category = get_object_or_404(Category, id=category_id)
@@ -561,14 +693,23 @@ def update_topic(request, section_id, category_id, subcategory_id, id):
     })
 
 # Deletar Tópico
+
 def delete_topic(request, section_id, category_id, subcategory_id, id):
+    # Buscar o tópico pelo ID
     topic = get_object_or_404(Topic, id=id)
     
+    # Verificar se o tópico está associado a subitens (subtópicos)
+    if topic.subtopics.exists():  # Usando o relacionamento inverso para acessar subtópicos relacionados
+        messages.warning(request, f'O tópico "{topic.name}" não pode ser deletado, pois está associado a subtópicos.')
+        return redirect('list_topic', section_id=section_id, category_id=category_id, subcategory_id=subcategory_id)
+    
+    # Verificar se a requisição é do tipo POST (enviado o formulário de exclusão)
     if request.method == 'POST':
-        topic.delete()
+        topic.delete()  # Deleta o tópico
         messages.success(request, 'Tópico deletado com sucesso!')
         return redirect('list_topic', section_id=section_id, category_id=category_id, subcategory_id=subcategory_id)
     
+    # Caso contrário, renderiza a página de confirmação de exclusão
     return render(request, 'topic/delete.html', {
         'topic': topic,
         'section_id': section_id,
@@ -601,7 +742,7 @@ def view_topic(request, topic_id):
     return render(request, 'topic/view.html', context)
 
 
-
+@login_required
 def create_subtopic(request, section_id, category_id, subcategory_id, topic_id):
     section = get_object_or_404(Section, id=section_id)
     category = get_object_or_404(Category, id=category_id)
@@ -616,6 +757,7 @@ def create_subtopic(request, section_id, category_id, subcategory_id, topic_id):
             subtopic.category = category
             subtopic.subcategory = subcategory
             subtopic.topic = topic
+            subtopic.author = request.user  # Define o autor como o usuário logado
             subtopic.save()
             messages.success(request, 'Subtópico criado com sucesso!')
             return redirect('list_subtopic', section_id=section_id, category_id=category_id, subcategory_id=subcategory_id, topic_id=topic_id)
@@ -671,21 +813,29 @@ def update_subtopic(request, section_id, category_id, subcategory_id, topic_id, 
 
 @reversion.create_revision()
 def delete_subtopic(request, section_id, category_id, subcategory_id, topic_id, id):
+    # Buscar o subtópico pelo ID
     subtopic = get_object_or_404(Subtopic, id=id)
 
+    # Verificar se o subtópico está associado a algum conteúdo, como uma instrução
+    if subtopic.instructions.exists():  # Substitua 'instructions' pelo campo que referencia 'Subtopic'
+        messages.warning(request, f'O subtópico "{subtopic.name}" não pode ser deletado, pois está associado a instruções.')
+        return redirect('list_subtopic', section_id=section_id, category_id=category_id, subcategory_id=subcategory_id, topic_id=topic_id)
+
+    # Se for uma requisição POST, prossegue com a exclusão
     if request.method == 'POST':
         with transaction.atomic():  # Usando transação atômica para garantir integridade
             # Registra o usuário e o comentário para a revisão
-            subtopic.save()
             reversion.set_user(request.user)
             reversion.set_comment('Subtópico deletado.')
-            # Agora exclui o objeto
+            
+            # Exclui o subtópico
             subtopic.delete()
+            
             # Mensagem de sucesso
             messages.success(request, 'Subtópico deletado com sucesso!')
             return redirect('list_subtopic', section_id=section_id, category_id=category_id, subcategory_id=subcategory_id, topic_id=topic_id)
 
-    # Se não for POST, realiza a exclusão diretamente
+    # Caso contrário, redireciona diretamente para a lista de subtópicos
     return redirect('list_subtopic', section_id=section_id, category_id=category_id, subcategory_id=subcategory_id, topic_id=topic_id)
 
 def list_subtopic(request, section_id, category_id, subcategory_id, topic_id):

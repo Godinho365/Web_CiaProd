@@ -82,7 +82,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'web1',
+        'NAME': 'web2',
         'USER': 'postgres',
         'PASSWORD': 'desenvolvimento',
         'HOST': 'localhost',
@@ -107,8 +107,8 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Internationalization settings
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+LANGUAGE_CODE = 'pt-br'
+TIME_ZONE = 'America/Sao_Paulo'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True

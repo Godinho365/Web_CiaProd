@@ -80,12 +80,36 @@
                                                     <i class="fas fa-edit"></i> Editar
                                                 </a>
                                                 
-                                                <form action="{% url 'delete_topic' category.section.id category.id subcategory.id topic.id %}" method="post" style="display:inline;">
-                                                    {% csrf_token %}
-                                                    <button type="submit" class="btn btn-sm btn-danger">
-                                                        <i class="fas fa-trash-alt"></i> Excluir
-                                                    </button>
-                                                </form>
+                                                <!-- Botão para abrir o modal -->
+                                                <button type="button" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#modal-delete-{{ topic.id }}">
+                                                    <i class="fas fa-trash-alt"></i> Excluir
+                                                </button>
+
+                                                <!-- Modal de Confirmação -->
+                                                <div class="modal fade" id="modal-delete-{{ topic.id }}" tabindex="-1" role="dialog" aria-labelledby="modal-title-delete-{{ topic.id }}" aria-hidden="true">
+                                                    <div class="modal-dialog modal-danger modal-dialog-centered" role="document">
+                                                        <div class="modal-content bg-gradient-danger">
+                                                            <div class="modal-header">
+                                                                <h6 class="modal-title" id="modal-title-delete-{{ topic.id }}">Confirmação de Exclusão</h6>
+                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                    <span aria-hidden="true">&times;</span>
+                                                                </button>
+                                                            </div>
+                                                            <div class="modal-body text-center">
+                                                                <p>Você tem certeza que deseja excluir o tópico "{{ topic.name }}"?</p>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <form action="{% url 'delete_topic' category.section.id category.id subcategory.id topic.id %}" method="POST" style="display:inline;">
+                                                                    {% csrf_token %}
+                                                                    <button type="submit" class="btn btn-white">
+                                                                        <i class="fas fa-check"></i> Sim, excluir
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-link text-white ml-auto" data-dismiss="modal">Cancelar</button>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         {% endif %}
                                     </div>
@@ -149,4 +173,5 @@
         </div>
     </div>
 </div>
+
 {% endblock %}

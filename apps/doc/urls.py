@@ -14,14 +14,14 @@ urlpatterns = [
 
     path('section/<int:section_id>/category-list/', list_category, name='list_category'),
     path('section/<int:section_id>/category/create/', create_category, name='create_category'),  
-    path('category/update/<int:id>/', update_category, name='update_category'),  
+    path('section/<int:section_id>/category/update/<int:id>/', update_category, name='update_category'),  
     path('category/delete/<int:id>/', delete_category, name='delete_category'),
-     path('category/<int:category_id>/', view_category, name='view_category'),
+    path('category/<int:category_id>/', view_category, name='view_category'),
 
     path('section/<int:section_id>/category/<int:category_id>/subcategory-list/', list_subcategory, name='list_subcategory'),
     path('section/<int:section_id>/category/<int:category_id>/subcategory/create/', create_subcategory, name='create_subcategory'),
     path('subcategory/update/<int:id>/', update_subcategory, name='update_subcategory'),
-    path('subcategory/delete//<int:id>/', delete_subcategory, name='delete_subcategory'),
+    path('section/<int:section_id>/category/<int:category_id>/subcategory/delete/<int:id>/', delete_subcategory, name='delete_subcategory'),
     path('subcategory/<int:subcategory_id>/view/', view_subcategory, name='view_subcategory'),
 
     path('section/<int:section_id>/category/<int:category_id>/subcategory/<int:subcategory_id>/topic/<int:topic_id>/subtopic/<int:subtopic_id>/instruction-list/', list_instruction, name='list_instruction'),  
@@ -43,6 +43,8 @@ urlpatterns = [
     path('section/<int:section_id>/category/<int:category_id>/subcategory/<int:subcategory_id>/topic/<int:topic_id>/subtopics/<int:id>/delete/',delete_subtopic,name='delete_subtopic'),
     path('section/<int:section_id>/category/<int:category_id>/subcategory/<int:subcategory_id>/topic/<int:topic_id>/subtopic-list/',list_subtopic,name='list_subtopic'),
     path('section/<int:section_id>/category/<int:category_id>/subcategory/<int:subcategory_id>/topic/<int:topic_id>/subtopic/<int:subtopic_id>/view/', view_subtopic, name='view_subtopic'),
+
+
     path('subtopic/<int:subtopic_id>/restore/<int:version_id>/', restore_subtopic, name='restore_subtopic'),
 
     
