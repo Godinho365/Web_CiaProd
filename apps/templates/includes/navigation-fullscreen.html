@@ -1,12 +1,11 @@
 <nav id="navbar-main" class="navbar navbar-horizontal navbar-transparent navbar-main navbar-expand-lg navbar-light">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <img src="/static/assets/img/brand/white.png" alt="Argon Design - Template Starter Logo.">
     </a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="navbar-collapse navbar-custom-collapse collapse" id="navbar-collapse">
+    <div class="navbar-collapse navbar-custom-collapse collapse" id="navbar-collapse" style="margin-top: -25px;">
       <div class="navbar-collapse-header">
         <div class="row">
           <div class="col-6 collapse-brand">
@@ -22,41 +21,45 @@
           </div>
         </div>
       </div>
-      <ul class="navbar-nav mr-auto">
+      <ul class="navbar-nav mr-auto d-flex align-items-center">
+        <!-- Item de navegação com a imagem -->
+        <li class="nav-item mr-3">
+          <img src="/static/assets/img/brand/teste.png" alt="Logo" style="width: 150px; height: auto;">
+        </li>
+
         <li class="nav-item">
           <a href="{% url 'login' %}" class="nav-link">
-            <span class="nav-link-inner--text">Login</span>
+            <span class="nav-link-inner--text">Entrar</span>
           </a>
         </li>
         <li class="nav-item">
           <a href="{% url 'register' %}" class="nav-link">
-            <span class="nav-link-inner--text">Register</span>
+            <span class="nav-link-inner--text">Registrar</span>
           </a>
         </li>
       </ul>
       <hr class="d-lg-none" />
       <ul class="navbar-nav align-items-lg-center ml-lg-auto">
         <li class="nav-item">
-          <a class="nav-link nav-link-icon" href="https://www.facebook.com/webappseed" 
-             target="_blank" data-toggle="tooltip" data-original-title="Like us on Facebook">
-            <i class="fab fa-facebook-square"></i>
-            <span class="nav-link-inner--text d-lg-none">Facebook</span>
+          <a class="nav-link nav-link-icon" href="https://github.com/Godinho365/Web_CiaProd" target="_blank" data-toggle="tooltip" data-original-title="Colabore com o Projeto">
+            <i class="fab fa-github"></i>
+            <span class="nav-link-inner--text d-lg-none">GitHub</span>
           </a>
         </li>
+        
         <li class="nav-item">
-          <a class="nav-link nav-link-icon" href="https://twitter.com/webappseed" 
-             target="_blank" data-toggle="tooltip" data-original-title="Follow us on Twitter">
-            <i class="fab fa-twitter-square"></i>
-            <span class="nav-link-inner--text d-lg-none">Twitter</span>
+          <a class="nav-link nav-link-icon" href="http://intranet.2cgeo.eb.mil.br/" target="_blank" data-toggle="tooltip" data-original-title="Acesse a intranet">
+            <i class="fas fa-network-wired"></i>
+            <span class="nav-link-inner--text d-lg-none">Intranet</span>
           </a>
         </li>
+        
         <li class="nav-item d-none d-lg-block ml-lg-4">
-          <a href="https://appseed.us/admin-dashboards/django-dashboard-argon-pro" 
-             target="_blank" class="btn btn-neutral btn-icon">
+          <a href="" target="_blank" class="btn btn-neutral btn-icon">
             <span class="btn-inner--icon">
-              <i class="fas fa-rocket mr-2"></i>
+              <i class="fas fa-book mr-2"></i>
             </span>
-            <span class="nav-link-inner--text">PRO Version</span>
+            <span class="nav-link-inner--text">Documentação</span>
           </a>
         </li>
       </ul>

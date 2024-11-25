@@ -10,6 +10,16 @@ from unipath import Path
 import sys
 sys.path.append('apps/scripts')
 
+# Exemplo de configuração com Gmail (pode ser ajustado conforme seu provedor de e-mail)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'god.rafa365@gmail.com'  # Seu e-mail
+EMAIL_HOST_PASSWORD = 'sxnf pnsm qshl atjm'  # Sua senha de aplicativo do Gmail (não sua senha de login)
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = Path(__file__).parent
@@ -38,7 +48,9 @@ INSTALLED_APPS = [
     'guardian',
     'apps.scripts',
     'apps.authentication',
-    'reversion'
+    'reversion',
+    
+    
 ]
 
 MIDDLEWARE = [
@@ -55,7 +67,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'core.urls'
 LOGIN_REDIRECT_URL = "home"  # Route defined in home/urls.py
-LOGOUT_REDIRECT_URL = "home"  # Route defined in home/urls.py
+LOGOUT_REDIRECT_URL = 'login'  # Route defined in home/urls.py
 
 # Define TEMPLATE_DIR correctly
 TEMPLATE_DIR = os.path.join(CORE_DIR, "apps/templates")  

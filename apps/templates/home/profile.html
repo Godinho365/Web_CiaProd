@@ -5,7 +5,7 @@
   class="header pb-6 d-flex align-items-center"
   style="
     min-height: 500px;
-    background-image: url(/static/assets/img/theme/profile-cover.jpg);
+    background-image: url(/static/assets/img/theme/aesthetic-liquid-marble-green-background-diy-experimental-art.jpg);
     background-size: cover;
     background-position: center top;
   "
@@ -30,25 +30,26 @@
     <div class="col-xl-4 order-xl-2">
       <div class="card card-profile">
         <img
-          src="/static/assets/img/theme/img-1-1000x600.jpg"
+          src="/static/assets/img/theme/3172.jpg"
           alt="Imagem"
           class="card-img-top"
-        />
+          style="height: 250px;"  <!-- Defina a altura desejada -->
+        
         <div class="row justify-content-center">
           <div class="col-lg-3 order-lg-2">
             <div class="card-profile-image">
               <a href="#">
-                <img
-                  src="/static/assets/img/theme/team-4.jpg"
-                  class="rounded-circle"
-                />
-              </a>
+              {% if user.is_superuser %}
+              <img src="/static/assets/img/theme/administrador.png" class="rounded-circle" alt="Superuser" />
+              {% else %}
+              <img src="/static/assets/img/theme/convidado.png" class="rounded-circle" alt="Visitante" />
+              {% endif %}
             </div>
           </div>
         </div>
         <div class="card-header text-center border-0 pt-8 pt-md-4 pb-0 pb-md-4">
           <div class="d-flex justify-content-between">
-            <a href="#" class="btn btn-sm btn-info mr-4">Conectar</a>
+            
             <a href="#" class="btn btn-sm btn-default float-right">Mensagem</a>
           </div>
         </div>
@@ -58,11 +59,11 @@
               <div class="card-profile-stats d-flex justify-content-center">
                 <div>
                   <span class="heading">22</span>
-                  <span class="description">Amigos</span>
+                  <span class="description">Visualizações</span>
                 </div>
                 <div>
                   <span class="heading">10</span>
-                  <span class="description">Fotos</span>
+                  <span class="description">Documentações</span>
                 </div>
                 <div>
                   <span class="heading">89</span>
@@ -75,12 +76,10 @@
             <h5 class="h3">{{ user.username }}</h5>
             <div class="h5 font-weight-300">{{ user.email }}</div>
             <div class="h5 mt-4">
-              <i class="ni business_briefcase-24 mr-2"></i>Gerente de Soluções -
-              Oficial da Creative Tim
+              <i class="ni business_briefcase-24 mr-2"></i>Auxiliar da Companhia de Produção
             </div>
             <div>
-              <i class="ni education_hat mr-2"></i>Universidade de Ciências da
-              Computação
+              <i class="ni education_hat mr-2"></i>2° Centro de Geoinformação
             </div>
           </div>
         </div>
@@ -165,14 +164,14 @@
             </div>
             <hr class="my-4" />
             <h6 class="heading-small text-muted mb-4">
-              Informações de contato
+              Informações Adicionais
             </h6>
             <div class="pl-lg-4">
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">
                     <label class="form-control-label" for="input-address"
-                      >Endereço</label
+                      >Usuário do SAP</label
                     >
                     <input
                       id="input-address"
@@ -188,7 +187,7 @@
                 <div class="col-lg-4">
                   <div class="form-group">
                     <label class="form-control-label" for="input-city"
-                      >Cidade</label
+                      >OM</label
                     >
                     <input
                       type="text"
@@ -202,7 +201,7 @@
                 <div class="col-lg-4">
                   <div class="form-group">
                     <label class="form-control-label" for="input-country"
-                      >País</label
+                      >Posto/Grad</label
                     >
                     <input
                       type="text"
@@ -215,31 +214,12 @@
                 </div>
                 <div class="col-lg-4">
                   <div class="form-group">
-                    <label class="form-control-label" for="input-postal-code"
-                      >CEP</label
-                    >
-                    <input
-                      type="number"
-                      id="input-postal-code"
-                      class="form-control"
-                      placeholder="CEP"
-                    />
+                   
                   </div>
                 </div>
               </div>
             </div>
-            <hr class="my-4" />
-            <h6 class="heading-small text-muted mb-4">Sobre mim</h6>
-            <div class="pl-lg-4">
-              <div class="form-group">
-                <label class="form-control-label">Sobre mim</label>
-                <textarea
-                  rows="4"
-                  class="form-control"
-                  placeholder="Escreva algumas palavras sobre você..."
-                ></textarea>
-              </div>
-            </div>
+            
             <button type="submit" class="btn btn-primary">Salvar</button>
           </form>
         </div>

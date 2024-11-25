@@ -15,8 +15,16 @@ from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from reversion.models import Revision
 from django.contrib.contenttypes.models import ContentType
+from django.urls import reverse
+from django.template.loader import render_to_string
+from xhtml2pdf import pisa
+import io
+from django.http import HttpResponse
+from django.apps import apps
+from django.http import JsonResponse
 
 
+@login_required
 def list_section(request):
     # Obtém o termo de busca da query string (se houver)
     search_query = request.GET.get('q', None)
@@ -26,18 +34,24 @@ def list_section(request):
     
     # Aplica o filtro de busca, se houver um termo de busca
     if search_query:
-        sections = sections.filter(title__icontains=search_query)  # Filtra pelo título da seção
+        sections = sections.filter(title__icontains=search_query)
     
     # Adiciona a paginação
     paginator = Paginator(sections, 3)  # 3 seções por página
-    page_number = request.GET.get('page')  # Obtém o número da página da URL
-    page_obj = paginator.get_page(page_number)  # Obtém as seções para a página atual
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Verifica se o usuário é superusuário ou pertence ao grupo "Contribuidor"
+    is_contributor = request.user.groups.filter(name='Contribuidor').exists()
+    
 
     return render(request, 'section/list.html', {
-        'page_obj': page_obj,  # Passa o objeto paginado para o template
-        'search_query': search_query,  # Passa a consulta de busca para o template
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'is_contributor': is_contributor,  # Passando o valor booleano
+        
     })
-
+@login_required
 @reversion.create_revision()  # Inicia o contexto de versão para a criação
 def create_section(request):
     if request.method == 'POST':
@@ -60,6 +74,7 @@ def create_section(request):
     # Passando None para section na criação
     return render(request, 'section/form.html', {'form': form, 'section': None})
 
+@login_required
 @reversion.create_revision()  # Inicia o contexto de versão
 def update_section(request, id):
     section = get_object_or_404(Section, id=id)  
@@ -84,6 +99,7 @@ def update_section(request, id):
     # Passando a seção encontrada para edição
     return render(request, 'section/form.html', {'form': form, 'section': section})
 
+@login_required
 @reversion.create_revision()  # Inicia o contexto de revisão
 def delete_section(request, id):
     section = get_object_or_404(Section, id=id)
@@ -118,7 +134,7 @@ def delete_section(request, id):
 
     return render(request, 'section/delete.html', {'section': section})
 
-
+@login_required
 def list_category(request, section_id):
     # Obtém a seção com base no ID
     section = get_object_or_404(Section, id=section_id)
@@ -138,14 +154,20 @@ def list_category(request, section_id):
     page_number = request.GET.get('page')  # Obtém o número da página da URL
     page_obj = paginator.get_page(page_number)  # Obtém as categorias para a página atual
 
+    # Verifica se o usuário é superusuário ou pertence ao grupo "Contribuidor"
+    is_contributor = request.user.groups.filter(name='Contribuidor').exists()
+
     return render(request, 'category/list.html', {
         'categories': page_obj,  # Passa o objeto paginado para o template
         'section': section,  # Adiciona a seção ao contexto
         'search_query': search_query,  # Passa a consulta de busca para o template
+        'is_contributor': is_contributor,
     })
 
 @login_required
+@reversion.create_revision()
 def create_category(request, section_id):
+
     section = get_object_or_404(Section, id=section_id)  # Obtém a seção com o ID fornecido
     if request.method == 'POST':
         form = CategoryForm(request.POST, request.FILES)
@@ -154,13 +176,20 @@ def create_category(request, section_id):
             category.section = section  # Associa a categoria à seção
             category.author = request.user  # Associa o autor à categoria
             category.save()
-            messages.success(request, f'A seção "{category.name}" foi criada com sucesso!')
+
+            # Adiciona uma mensagem ao reversion
+            reversion.set_user(request.user)
+            reversion.set_comment(f'Categoria "{category.name}" criada por {request.user.username}.')
+
+            messages.success(request, f'A categoria "{category.name}" foi criada com sucesso!')
             return redirect('list_category', section_id=section.id)  # Redireciona para a lista de categorias
     else:
         form = CategoryForm(section_instance=section)  # Passa a seção como argumento
 
-    return render(request, 'category/form.html', {'form': form, 'section': section})  # Passa a seção para o template
+    return render(request, 'category/form.html', {'form': form, 'section': section})
 
+@login_required
+@reversion.create_revision()
 def update_category(request, section_id, id):
     # Obtenha a seção associada ao section_id
     section = get_object_or_404(Section, id=section_id)
@@ -170,10 +199,19 @@ def update_category(request, section_id, id):
     if request.method == 'POST':
         form = CategoryForm(request.POST, request.FILES, instance=category)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Categoria atualizada com sucesso!')
-            # Redirecione para a lista de categorias da seção
-            return redirect('list_category', section_id=section.id)
+            try:
+                # Salvar a categoria e criar uma revisão
+                form.save()
+
+                # Associar informações de revisão
+                reversion.set_user(request.user)
+                reversion.set_comment(f'Categoria "{category.name}" atualizada por {request.user.username}.')
+
+                messages.success(request, 'Categoria atualizada com sucesso!')
+                # Redirecione para a lista de categorias da seção
+                return redirect('list_category', section_id=section.id)
+            except Exception as e:
+                messages.error(request, f'Ocorreu um erro ao atualizar a categoria: {e}')
     else:
         form = CategoryForm(instance=category)
 
@@ -187,7 +225,7 @@ def update_category(request, section_id, id):
         }
     )
 
-
+@login_required
 @reversion.create_revision()  # Inicia o contexto de revisão
 def delete_category(request, id):
     category = get_object_or_404(Category, id=id)
@@ -229,8 +267,7 @@ def delete_category(request, id):
     # Renderiza a página de confirmação de exclusão
     return render(request, 'category/delete.html', {'category': category})
 
-
- 
+@login_required
 def view_category(request, category_id):
     # Obtendo a categoria pelo ID
     category = get_object_or_404(Category, id=category_id)
@@ -242,16 +279,51 @@ def view_category(request, category_id):
     # Obtendo a seção associada à categoria
     section = category.section
 
+    # Obter o histórico de versões da categoria
+    versions = Version.objects.get_for_object(category)
+
+    # Verifica se há filtros de data
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    # Filtro para a data inicial (start_date)
+    if start_date:
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')  # Converte a data para datetime
+            versions = versions.filter(revision__date_created__gte=start_date)  # Filtro para data inicial
+        except ValueError:
+            versions = versions.none()  # Caso a data esteja no formato incorreto
+            # Você pode adicionar uma mensagem de erro ou feedback aqui
+
+    # Filtro para a data final (end_date)
+    if end_date:
+        try:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')  # Converte a data para datetime
+            versions = versions.filter(revision__date_created__lte=end_date)  # Filtro para data final
+        except ValueError:
+            versions = versions.none()  # Caso a data esteja no formato incorreto
+            # Você pode adicionar uma mensagem de erro ou feedback aqui
+
+    # Paginação: configura o Paginator e obtém a página atual
+    paginator = Paginator(versions, 10)  # 3 versões por página (ajuste conforme necessário)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    is_contributor = request.user.groups.filter(name='Contribuidor').exists()
+
     # Preparando o contexto para o template
     context = {
         'category': category,  # Adicionando a categoria ao contexto
         'section': section,  # Adicionando a seção ao contexto
         'content': category.content,  # Presumindo que haja um campo 'content' no modelo Category
+        'page_obj': page_obj,  # Passa o objeto de página com as versões paginadas
+        'is_contributor': is_contributor,
     }
 
     # Renderizando o template com o contexto
     return render(request, 'category/view.html', context)
 
+@login_required
 def list_subcategory(request, section_id, category_id):
     # Obtém a seção com base no ID
     section = get_object_or_404(Section, id=section_id)
@@ -274,14 +346,19 @@ def list_subcategory(request, section_id, category_id):
     page_number = request.GET.get('page')
     subcategories = paginator.get_page(page_number)
 
+    is_contributor = request.user.groups.filter(name='Contribuidor').exists()
+
+
     return render(request, 'subcategory/list.html', {
         'subcategories': subcategories,
         'category': category,  # Adiciona a categoria ao contexto
         'section': section,    # Adiciona a seção ao contexto (opcional, se precisar)
         'search_query': search_query,  # Passa a consulta de busca para o template
+        'is_contributor': is_contributor,
     })
 
 @login_required
+@reversion.create_revision()
 def create_subcategory(request, section_id, category_id):
     # Obtém a categoria com o ID fornecido
     category = get_object_or_404(Category, id=category_id)
@@ -292,20 +369,30 @@ def create_subcategory(request, section_id, category_id):
         # Cria o formulário com os dados enviados, passando a categoria e a seção
         form = SubcategoryForm(request.POST, request.FILES, category=category, section=section)
         if form.is_valid():
-            subcategory = form.save(commit=False)
-            subcategory.category = category  # Associa a subcategoria à categoria
-            subcategory.section = section  # Associa a subcategoria à seção
-            subcategory.author = request.user  # Associa o autor à subcategoria
-            subcategory.save()
-            messages.success(request, 'Subcategoria criada com sucesso!')
-            # Redireciona para a lista de subcategorias usando a categoria
-            return redirect('list_subcategory', section_id=section.id, category_id=category.id)
+            try:
+                subcategory = form.save(commit=False)
+                subcategory.category = category  # Associa a subcategoria à categoria
+                subcategory.section = section  # Associa a subcategoria à seção
+                subcategory.author = request.user  # Associa o autor à subcategoria
+                subcategory.save()
+
+                # Registra informações da revisão
+                reversion.set_user(request.user)
+                reversion.set_comment(f'Subcategoria "{subcategory.name}" criada por {request.user.username}.')
+
+                messages.success(request, 'Subcategoria criada com sucesso!')
+                # Redireciona para a lista de subcategorias usando a categoria
+                return redirect('list_subcategory', section_id=section.id, category_id=category.id)
+            except Exception as e:
+                messages.error(request, f'Erro ao criar subcategoria: {e}')
     else:
         # Inicializa o formulário com a categoria e a seção
         form = SubcategoryForm(category=category, section=section)
 
     return render(request, 'subcategory/form.html', {'form': form, 'category': category, 'section': section})
 
+@login_required
+@reversion.create_revision()
 def update_subcategory(request, id):
     subcategory = get_object_or_404(Subcategory, id=id)
     
@@ -316,10 +403,18 @@ def update_subcategory(request, id):
     if request.method == 'POST':
         form = SubcategoryForm(request.POST, request.FILES, instance=subcategory)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Subcategoria atualizada com sucesso!')
-            # Redireciona para a lista de subcategorias usando os IDs da seção e da categoria
-            return redirect('list_subcategory', section_id=section.id, category_id=category.id)
+            try:
+                form.save()
+
+                # Registra informações da revisão
+                reversion.set_user(request.user)
+                reversion.set_comment(f'Subcategoria "{subcategory.name}" atualizada por {request.user.username}.')
+
+                messages.success(request, 'Subcategoria atualizada com sucesso!')
+                # Redireciona para a lista de subcategorias usando os IDs da seção e da categoria
+                return redirect('list_subcategory', section_id=section.id, category_id=category.id)
+            except Exception as e:
+                messages.error(request, f'Ocorreu um erro ao atualizar a subcategoria: {e}')
     else:
         # Passa a categoria e a seção para o formulário
         form = SubcategoryForm(instance=subcategory, category=category, section=section)
@@ -331,6 +426,7 @@ def update_subcategory(request, id):
         'section': section     # Passa a seção para o template
     })
 
+@login_required
 @reversion.create_revision()
 def delete_subcategory(request, section_id, category_id, id):
     # Buscar a subcategoria pelo ID
@@ -358,8 +454,7 @@ def delete_subcategory(request, section_id, category_id, id):
     # Caso contrário, redireciona diretamente para a lista de subcategorias
     return redirect('list_subcategory', section_id=section_id, category_id=category_id)
 
-
-
+@login_required
 def view_subcategory(request, subcategory_id):
     # Obtendo a subcategoria pelo ID
     subcategory = get_object_or_404(Subcategory, id=subcategory_id)
@@ -372,17 +467,54 @@ def view_subcategory(request, subcategory_id):
     section = subcategory.category.section
     category = subcategory.category
 
+    # Obter o histórico de versões da subcategoria
+    versions = Version.objects.get_for_object(subcategory)
+
+    # Verifica se há filtros de data
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    # Filtro para a data inicial (start_date)
+    if start_date:
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')  # Converte a data para datetime
+            versions = versions.filter(revision__date_created__gte=start_date)  # Filtro para data inicial
+        except ValueError:
+            messages.error(request, "Formato de data inicial inválido. Use o formato YYYY-MM-DD.")
+            versions = versions.none()
+
+    # Filtro para a data final (end_date)
+    if end_date:
+        try:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')  # Converte a data para datetime
+            versions = versions.filter(revision__date_created__lte=end_date)  # Filtro para data final
+        except ValueError:
+            messages.error(request, "Formato de data final inválido. Use o formato YYYY-MM-DD.")
+            versions = versions.none()
+
+    # Paginação: configura o Paginator e obtém a página atual
+    paginator = Paginator(versions, 10)  # 3 versões por página (ajuste conforme necessário)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    is_contributor = request.user.groups.filter(name='Contribuidor').exists()
+
     # Preparando o contexto para o template
     context = {
         'subcategory': subcategory,  # Adicionando a subcategoria ao contexto
         'section': section,  # Adicionando a seção ao contexto
         'category': category,  # Adicionando a categoria ao contexto
         'content': subcategory.content,  # Conteúdo do CKEditor
+        'page_obj': page_obj,  # Passando o objeto de página com as versões paginadas
+        'start_date': start_date if start_date else '',
+        'end_date': end_date if end_date else '',
+        'is_contributor': is_contributor,
     }
 
     # Renderizando o template com o contexto
     return render(request, 'subcategory/view.html', context)
 
+@login_required
 def list_instruction(request, section_id, category_id, subcategory_id, topic_id, subtopic_id):
     # Obtém os objetos Section, Category, Subcategory, Topic e Subtopic
     section = get_object_or_404(Section, id=section_id)
@@ -414,6 +546,8 @@ def list_instruction(request, section_id, category_id, subcategory_id, topic_id,
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    is_contributor = request.user.groups.filter(name='Contribuidor').exists()
+
     return render(request, 'instruction/list.html', {
         'section': section,
         'category': category,
@@ -424,10 +558,12 @@ def list_instruction(request, section_id, category_id, subcategory_id, topic_id,
         'subfase_filter': subfase_filter,
         'subfases': subfases,  # Passa as subfases únicas para o template
         'search_query': search_query,  # Passa a consulta de busca para o template
+        'is_contributor': is_contributor
     })
 
 
 @login_required
+@reversion.create_revision()
 def create_instruction(request, section_id, category_id, subcategory_id, topic_id, subtopic_id):
     # Obtém os objetos relacionados diretamente dos IDs fornecidos
     section = get_object_or_404(Section, id=section_id)
@@ -448,6 +584,11 @@ def create_instruction(request, section_id, category_id, subcategory_id, topic_i
             instruction.subtopic = subtopic
             instruction.author = request.user  # Define o autor
             instruction.save()
+
+            # Registra informações de revisão no django-reversion
+            reversion.set_user(request.user)
+            reversion.set_comment(f'Instrução "{instruction.title}" criada por {request.user.username}.')
+
             messages.success(request, 'Instrução criada com sucesso!')
             return redirect('list_instruction', 
                             section_id=section.id, 
@@ -475,8 +616,8 @@ def create_instruction(request, section_id, category_id, subcategory_id, topic_i
         'subtopic': subtopic,
     })
 
-    return render(request, 'instruction/form.html', context)
-
+@login_required
+@reversion.create_revision()
 def update_instruction(request, section_id, category_id, subcategory_id, topic_id, subtopic_id, id):
     instruction = get_object_or_404(Instruction, id=id)
     
@@ -490,7 +631,12 @@ def update_instruction(request, section_id, category_id, subcategory_id, topic_i
     if request.method == 'POST':
         form = InstructionForm(request.POST, request.FILES, instance=instruction)
         if form.is_valid():
-            form.save()
+            instruction = form.save()
+
+            # Registra as alterações no django-reversion
+            reversion.set_user(request.user)
+            reversion.set_comment(f'Instrução "{instruction.title}" atualizada por {request.user.username}.')
+
             messages.success(request, 'Instrução atualizada com sucesso!')
             return redirect('list_instruction', 
                             section_id=section_id, 
@@ -516,13 +662,27 @@ def update_instruction(request, section_id, category_id, subcategory_id, topic_i
         'subtopic': subtopic,
     })
 
+@login_required
+@reversion.create_revision()
 def delete_instruction(request, section_id, category_id, subcategory_id, topic_id, subtopic_id, id):
     instruction = get_object_or_404(Instruction, id=id)
+
     if request.method == 'POST':
+        # Registra a exclusão no histórico do django-reversion
+        reversion.set_user(request.user)
+        reversion.set_comment(f'Instrução "{instruction.title}" deletada por {request.user.username}.')
+
+        # Deleta a instrução
         instruction.delete()
+
         messages.success(request, 'Instrução deletada com sucesso!')
-        # Redireciona para a lista de instruções, incluindo todos os parâmetros necessários
-        return redirect('list_instruction', section_id=section_id, category_id=category_id, subcategory_id=subcategory_id, topic_id=topic_id, subtopic_id=subtopic_id)
+        # Redireciona para a lista de instruções
+        return redirect('list_instruction', 
+                        section_id=section_id, 
+                        category_id=category_id, 
+                        subcategory_id=subcategory_id, 
+                        topic_id=topic_id, 
+                        subtopic_id=subtopic_id)
     
     # Renderiza o template de confirmação de exclusão
     return render(request, 'instruction/delete.html', {
@@ -530,10 +690,11 @@ def delete_instruction(request, section_id, category_id, subcategory_id, topic_i
         'section_id': section_id,
         'category_id': category_id,
         'subcategory_id': subcategory_id,
-        'topic_id': topic_id,  # Mantido
-        'subtopic_id': subtopic_id  # Mantido
+        'topic_id': topic_id,
+        'subtopic_id': subtopic_id
     })
 
+@login_required
 def view_instruction(request, section_id, category_id, subcategory_id, topic_id, subtopic_id, instruction_id):
     # Busca a instrução com base no ID
     instruction = get_object_or_404(Instruction, id=instruction_id)
@@ -551,7 +712,39 @@ def view_instruction(request, section_id, category_id, subcategory_id, topic_id,
     topic = get_object_or_404(Topic, id=topic_id, subcategory=subcategory) if topic_id else None
     subtopic = get_object_or_404(Subtopic, id=subtopic_id, topic=topic) if subtopic_id else None
 
-    # Renderiza o template com os dados da instrução, tópico, subtópico e IDs necessários
+    # Obter o histórico de versões da instrução
+    versions = Version.objects.get_for_object(instruction)
+
+    # Verifica se há filtros de data
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    # Filtro para a data inicial (start_date)
+    if start_date:
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')  # Converte a data para datetime
+            versions = versions.filter(revision__date_created__gte=start_date)  # Filtro para data inicial
+        except ValueError:
+            messages.error(request, "Formato de data inicial inválido. Use o formato YYYY-MM-DD.")
+            versions = versions.none()  # Se a data estiver no formato errado, não exibe versões
+
+    # Filtro para a data final (end_date)
+    if end_date:
+        try:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')  # Converte a data para datetime
+            versions = versions.filter(revision__date_created__lte=end_date)  # Filtro para data final
+        except ValueError:
+            messages.error(request, "Formato de data final inválido. Use o formato YYYY-MM-DD.")
+            versions = versions.none()  # Se a data estiver no formato errado, não exibe versões
+
+    # Paginação: configura o Paginator e obtém a página atual
+    paginator = Paginator(versions, 10)  # 10 versões por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    is_contributor = request.user.groups.filter(name='Contribuidor').exists()
+
+    # Renderiza o template com os dados da instrução, tópico, subtópico e outros dados necessários
     return render(request, 'instruction/view.html', {
         'instruction': instruction,
         'topic': topic,              # Adiciona o tópico ao contexto
@@ -559,8 +752,13 @@ def view_instruction(request, section_id, category_id, subcategory_id, topic_id,
         'section': section,          # Adiciona a seção ao contexto
         'category': category,        # Adiciona a categoria ao contexto
         'subcategory': subcategory,  # Adiciona a subcategoria ao contexto
+        'page_obj': page_obj,        # Passa o objeto de página com as versões paginadas
+        'start_date': start_date if start_date else '',  # Para preencher o campo de data inicial no template
+        'end_date': end_date if end_date else '',        # Para preencher o campo de data final no template
+        'is_contributor': is_contributor,
     })
 
+@login_required
 def order_instructions(request, section_id, category_id, subcategory_id, topic_id=None, subtopic_id=None):
     # Filtra as instruções com base em todos os IDs fornecidos
     instructions = Instruction.objects.filter(
@@ -604,6 +802,7 @@ def order_instructions(request, section_id, category_id, subcategory_id, topic_i
         'subtopic_id': subtopic_id
     })
 
+@login_required
 def list_topic(request, section_id, category_id, subcategory_id):
     section = get_object_or_404(Section, id=section_id)
     category = get_object_or_404(Category, id=category_id)
@@ -623,17 +822,22 @@ def list_topic(request, section_id, category_id, subcategory_id):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    is_contributor = request.user.groups.filter(name='Contribuidor').exists()
+
     return render(request, 'topic/list.html', {
         'section': section,
         'category': category,
         'subcategory': subcategory,
         'topics': page_obj,
         'search_query': search_query,
+        'is_contributor': is_contributor,
     })
 
 
 @login_required
+@reversion.create_revision()  # Adiciona controle de versão ao processo de criação
 def create_topic(request, section_id, category_id, subcategory_id):
+    # Obtém os objetos relacionados diretamente dos IDs fornecidos
     section = get_object_or_404(Section, id=section_id)
     category = get_object_or_404(Category, id=category_id)
     subcategory = get_object_or_404(Subcategory, id=subcategory_id)
@@ -647,6 +851,11 @@ def create_topic(request, section_id, category_id, subcategory_id):
             topic.subcategory = subcategory
             topic.author = request.user  # Define o autor como o usuário logado
             topic.save()
+
+            # Registra a criação no reversion
+            reversion.set_user(request.user)  # Define o usuário que fez a alteração
+            reversion.set_comment(f'Tópico "{topic.name}" criado por {request.user.username}.')  # Adiciona um comentário
+
             messages.success(request, 'Tópico criado com sucesso!')
             return redirect('list_topic', section_id=section_id, category_id=category_id, subcategory_id=subcategory_id)
         else:
@@ -667,6 +876,8 @@ def create_topic(request, section_id, category_id, subcategory_id):
         'subcategory': subcategory,
     })
 
+@login_required
+@reversion.create_revision()  # Adiciona controle de versão ao processo de atualização
 def update_topic(request, section_id, category_id, subcategory_id, id):
     topic = get_object_or_404(Topic, id=id)
 
@@ -678,7 +889,12 @@ def update_topic(request, section_id, category_id, subcategory_id, id):
     if request.method == 'POST':
         form = TopicForm(request.POST, request.FILES, instance=topic)
         if form.is_valid():
-            form.save()
+            topic = form.save()
+
+            # Registra a atualização no reversion
+            reversion.set_user(request.user)  # Define o usuário que fez a alteração
+            reversion.set_comment(f'Tópico "{topic.name}" atualizado por {request.user.username}.')  # Adiciona um comentário
+
             messages.success(request, 'Tópico atualizado com sucesso!')
             return redirect('list_topic', section_id=section_id, category_id=category_id, subcategory_id=subcategory_id)
     else:
@@ -691,9 +907,10 @@ def update_topic(request, section_id, category_id, subcategory_id, id):
         'category': category,  # Adicionando a categoria
         'subcategory': subcategory,  # Adicionando a subcategoria
     })
-
 # Deletar Tópico
 
+@login_required
+@reversion.create_revision()  # Adiciona controle de versão ao processo de exclusão
 def delete_topic(request, section_id, category_id, subcategory_id, id):
     # Buscar o tópico pelo ID
     topic = get_object_or_404(Topic, id=id)
@@ -705,6 +922,10 @@ def delete_topic(request, section_id, category_id, subcategory_id, id):
     
     # Verificar se a requisição é do tipo POST (enviado o formulário de exclusão)
     if request.method == 'POST':
+        # Registrar a exclusão no reversion antes de deletar
+        reversion.set_user(request.user)  # Registra o usuário que realizou a exclusão
+        reversion.set_comment(f'Tópico "{topic.name}" deletado por {request.user.username}.')  # Adiciona um comentário sobre a exclusão
+        
         topic.delete()  # Deleta o tópico
         messages.success(request, 'Tópico deletado com sucesso!')
         return redirect('list_topic', section_id=section_id, category_id=category_id, subcategory_id=subcategory_id)
@@ -717,32 +938,71 @@ def delete_topic(request, section_id, category_id, subcategory_id, id):
         'subcategory_id': subcategory_id
     })
 
-# Visualizar Tópico
+@login_required
 def view_topic(request, topic_id):
-    # Recupera o tópico com base no ID
+    # Obtendo o tópico pelo ID
     topic = get_object_or_404(Topic, id=topic_id)
 
-    # Incrementa o contador de visualizações do tópico
+    # Incrementando o contador de visualizações
     topic.view_count += 1
     topic.save()
 
-    # Recupera a subcategoria, categoria e seção relacionadas
+    # Recuperando as relações do tópico
     subcategory = topic.subcategory  # Supondo que Topic tem um campo subcategory
     category = subcategory.category  # Supondo que Subcategory tem um campo category
-    section = category.section      # Supondo que Category tem um campo section
+    section = category.section       # Supondo que Category tem um campo section
 
-    # Contexto para passar os dados para o template
+    # Obter o histórico de versões do tópico
+    versions = Version.objects.get_for_object(topic)
+
+    # Verifica se há filtros de data
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    # Filtro para a data inicial (start_date)
+    if start_date:
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')  # Converte a data para datetime
+            versions = versions.filter(revision__date_created__gte=start_date)  # Filtro para data inicial
+        except ValueError:
+            messages.error(request, "Formato de data inicial inválido. Use o formato YYYY-MM-DD.")
+            versions = versions.none()
+
+    # Filtro para a data final (end_date)
+    if end_date:
+        try:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')  # Converte a data para datetime
+            versions = versions.filter(revision__date_created__lte=end_date)  # Filtro para data final
+        except ValueError:
+            messages.error(request, "Formato de data final inválido. Use o formato YYYY-MM-DD.")
+            versions = versions.none()
+
+    # Paginação: configura o Paginator e obtém a página atual
+    paginator = Paginator(versions, 10)  # 10 versões por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    is_contributor = request.user.groups.filter(name='Contribuidor').exists()
+
+    # Preparando o contexto para o template
     context = {
-        'topic': topic,
-        'subcategory': subcategory,
-        'category': category,
-        'section': section,
+        'topic': topic,  # Adicionando o tópico ao contexto
+        'subcategory': subcategory,  # Adicionando a subcategoria ao contexto
+        'category': category,  # Adicionando a categoria ao contexto
+        'section': section,  # Adicionando a seção ao contexto
+        'content': topic.content,  # Conteúdo do CKEditor ou similar
+        'page_obj': page_obj,  # Passando o objeto de página com as versões paginadas
+        'start_date': start_date if start_date else '',
+        'end_date': end_date if end_date else '',
+        'is_contributor': is_contributor,  # Verifica se o usuário é contribuid
     }
 
+    # Renderizando o template com o contexto
     return render(request, 'topic/view.html', context)
 
 
 @login_required
+@reversion.create_revision()  # Adiciona controle de versão à criação do subtópico
 def create_subtopic(request, section_id, category_id, subcategory_id, topic_id):
     section = get_object_or_404(Section, id=section_id)
     category = get_object_or_404(Category, id=category_id)
@@ -758,6 +1018,11 @@ def create_subtopic(request, section_id, category_id, subcategory_id, topic_id):
             subtopic.subcategory = subcategory
             subtopic.topic = topic
             subtopic.author = request.user  # Define o autor como o usuário logado
+
+            # Registrar a criação do subtópico no histórico de revisões
+            reversion.set_user(request.user)  # Registra o usuário que criou o subtópico
+            reversion.set_comment(f'Subtópico "{subtopic.name}" criado por {request.user.username}.')  # Comentário sobre a criação
+
             subtopic.save()
             messages.success(request, 'Subtópico criado com sucesso!')
             return redirect('list_subtopic', section_id=section_id, category_id=category_id, subcategory_id=subcategory_id, topic_id=topic_id)
@@ -779,6 +1044,7 @@ def create_subtopic(request, section_id, category_id, subcategory_id, topic_id):
         'topic': topic,
     })
 
+@login_required
 @reversion.create_revision()  # Inicia o contexto de versão
 def update_subtopic(request, section_id, category_id, subcategory_id, topic_id, id):
     subtopic = get_object_or_404(Subtopic, id=id)
@@ -811,6 +1077,7 @@ def update_subtopic(request, section_id, category_id, subcategory_id, topic_id, 
         'topic': topic,
     })
 
+@login_required
 @reversion.create_revision()
 def delete_subtopic(request, section_id, category_id, subcategory_id, topic_id, id):
     # Buscar o subtópico pelo ID
@@ -838,6 +1105,7 @@ def delete_subtopic(request, section_id, category_id, subcategory_id, topic_id, 
     # Caso contrário, redireciona diretamente para a lista de subtópicos
     return redirect('list_subtopic', section_id=section_id, category_id=category_id, subcategory_id=subcategory_id, topic_id=topic_id)
 
+@login_required
 def list_subtopic(request, section_id, category_id, subcategory_id, topic_id):
     topic = get_object_or_404(Topic, id=topic_id)
     subtopics = Subtopic.objects.filter(topic=topic)
@@ -859,6 +1127,8 @@ def list_subtopic(request, section_id, category_id, subcategory_id, topic_id):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    is_contributor = request.user.groups.filter(name='Contribuidor').exists()
+
     # Obtendo as versões válidas do subtópico
     subtopic_versions = []
     for subtopic in subtopics:
@@ -878,9 +1148,10 @@ def list_subtopic(request, section_id, category_id, subcategory_id, topic_id):
         'subcategory_id': subcategory_id,
         'search_query': search_query,
         'subtopic_versions': subtopic_versions,  # Passa as versões para o template
+        'is_contributor': is_contributor
     })
 
-
+@login_required
 def view_subtopic(request, section_id, category_id, subcategory_id, topic_id, subtopic_id):
     # Recupera a seção, categoria, subcategoria, tópico e subtópico com base nos IDs
     section = get_object_or_404(Section, id=section_id)
@@ -906,7 +1177,8 @@ def view_subtopic(request, section_id, category_id, subcategory_id, topic_id, su
             start_date = datetime.strptime(start_date, '%Y-%m-%d')  # Converte a data para datetime
             versions = versions.filter(revision__date_created__gte=start_date)  # Filtro para data inicial
         except ValueError:
-            versions = versions.none()  # Caso a data esteja no formato incorreto
+            messages.error(request, "Formato de data inicial inválido. Use o formato YYYY-MM-DD.")
+            versions = versions.none()  # Se a data estiver no formato errado, não exibe versões
 
     # Filtro para a data final (end_date)
     if end_date:
@@ -914,13 +1186,15 @@ def view_subtopic(request, section_id, category_id, subcategory_id, topic_id, su
             end_date = datetime.strptime(end_date, '%Y-%m-%d')  # Converte a data para datetime
             versions = versions.filter(revision__date_created__lte=end_date)  # Filtro para data final
         except ValueError:
-            versions = versions.none()  # Caso a data esteja no formato incorreto
+            messages.error(request, "Formato de data final inválido. Use o formato YYYY-MM-DD.")
+            versions = versions.none()  # Se a data estiver no formato errado, não exibe versões
 
     # Paginação: configura o Paginator e obtém a página atual
-    paginator = Paginator(versions, 3)  # 3 versões por página (ajuste conforme necessário)
+    paginator = Paginator(versions, 10)  # 10 versões por página
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    is_contributor = request.user.groups.filter(name='Contribuidor').exists()
     # Renderiza o template com as variáveis necessárias
     return render(request, 'subtopic/view.html', {
         'section': section,
@@ -929,8 +1203,94 @@ def view_subtopic(request, section_id, category_id, subcategory_id, topic_id, su
         'topic': topic,
         'subtopic': subtopic,
         'page_obj': page_obj,  # Passa o objeto de página com as versões paginadas
+        'start_date': start_date if start_date else '',  # Para preencher o campo de data inicial no template
+        'end_date': end_date if end_date else '',  # Para preencher o campo de data final no template
+        'is_contributor': is_contributor,
     })
 
+
+@login_required
+@reversion.create_revision()
+def restore_category(request, category_id, version_id):
+    print(f"Metodo da requisição: {request.method}")  # Para fins de depuração, remova ou logue após testes
+    category = get_object_or_404(Category, id=category_id)
+
+    if request.method == 'GET':
+        # Tenta recuperar a versão
+        try:
+            version = reversion.models.Version.objects.get(id=version_id, object_id=category.id)
+            print(f"Versão encontrada: {version}")
+        except reversion.models.Version.DoesNotExist:
+            messages.error(request, 'Versão não encontrada.')
+            return redirect('view_category', category_id=category_id)
+
+        # Restaura a versão
+        version.revision.revert()
+        reversion.set_user(request.user)
+        reversion.set_comment('Versão restaurada.')
+        messages.success(request, 'Versão restaurada com sucesso!')
+
+        # Redireciona para a categoria restaurada
+        return redirect('view_category', category_id=category.id)
+
+    # Se o método não for GET, redireciona para a lista de categorias
+    return redirect('list_category', section_id=category.section.id)
+
+@login_required
+@reversion.create_revision()
+def restore_subcategory(request, subcategory_id, version_id):
+    print(f"Metodo da requisição: {request.method}")  # Para fins de depuração, remova ou logue após testes
+    subcategory = get_object_or_404(Subcategory, id=subcategory_id)
+
+    if request.method == 'GET':
+        # Tenta recuperar a versão da subcategoria
+        try:
+            version = reversion.models.Version.objects.get(id=version_id, object_id=subcategory.id)
+            print(f"Versão encontrada: {version}")
+        except reversion.models.Version.DoesNotExist:
+            messages.error(request, 'Versão não encontrada.')
+            return redirect('view_subcategory', subcategory_id=subcategory_id)  # Redireciona para a subcategoria
+
+        # Restaura a versão
+        version.revision.revert()
+        reversion.set_user(request.user)
+        reversion.set_comment('Versão restaurada.')
+        messages.success(request, 'Versão restaurada com sucesso!')
+
+        # Redireciona para a subcategoria restaurada
+        return redirect('view_subcategory', subcategory_id=subcategory.id)
+
+    # Se o método não for GET, redireciona para a lista de subcategorias
+    return redirect('list_subcategory', category_id=subcategory.category.id)
+
+@login_required
+@reversion.create_revision()
+def restore_topic(request, topic_id, version_id):
+    print(f"Método da requisição: {request.method}")  # Para depuração, remova ou substitua por logs em produção
+    topic = get_object_or_404(Topic, id=topic_id)
+
+    if request.method == 'GET':
+        # Tenta recuperar a versão do tópico
+        try:
+            version = reversion.models.Version.objects.get(id=version_id, object_id=topic.id)
+            print(f"Versão encontrada: {version}")
+        except reversion.models.Version.DoesNotExist:
+            messages.error(request, 'Versão não encontrada.')
+            return redirect('view_topic', topic_id=topic_id)  # Redireciona para o tópico
+
+        # Restaura a versão
+        version.revision.revert()
+        reversion.set_user(request.user)
+        reversion.set_comment('Versão restaurada.')
+        messages.success(request, 'Versão restaurada com sucesso!')
+
+        # Redireciona para o tópico restaurado
+        return redirect('view_topic', topic_id=topic.id)
+
+    # Se o método não for GET, redireciona para a lista de tópicos
+    return redirect('list_topic', subcategory_id=topic.subcategory.id)
+
+@login_required
 @reversion.create_revision()
 def restore_subtopic(request, subtopic_id, version_id):
     print(f"Metodo da requisição: {request.method}")  # Adicione isso
@@ -965,9 +1325,79 @@ def restore_subtopic(request, subtopic_id, version_id):
                     subcategory_id=subtopic.topic.subcategory.id,
                     topic_id=subtopic.topic.id)
 
+@login_required
+@reversion.create_revision()
+def restore_instruction(request, instruction_id, version_id):
+    print(f"Método da requisição: {request.method}")  # Adiciona log
+    instruction = get_object_or_404(Instruction, id=instruction_id)
+
+    if request.method == 'GET':
+        # Executa a restauração
+        try:
+            version = reversion.models.Version.objects.get(id=version_id, object_id=instruction.id)
+            print(f"Versão encontrada: {version}")
+        except reversion.models.Version.DoesNotExist:
+            messages.error(request, 'Versão não encontrada.')
+            return redirect('view_instruction', 
+                            section_id=instruction.section.id, 
+                            category_id=instruction.category.id,
+                            subcategory_id=instruction.subcategory.id,
+                            topic_id=instruction.topic.id, 
+                            subtopic_id=instruction.subtopic.id,
+                            instruction_id=instruction.id)
+
+        # Restaura a versão
+        version.revision.revert()
+        reversion.set_user(request.user)
+        reversion.set_comment('Versão restaurada.')
+        messages.success(request, 'Versão restaurada com sucesso!')
+
+        return redirect('view_instruction', 
+                        section_id=instruction.section.id, 
+                        category_id=instruction.category.id,
+                        subcategory_id=instruction.subcategory.id,
+                        topic_id=instruction.topic.id, 
+                        subtopic_id=instruction.subtopic.id,
+                        instruction_id=instruction.id)
+
+    # Se o método não for GET, redireciona para a lista de instruções
+    return redirect('list_instructions', 
+                    section_id=instruction.section.id, 
+                    category_id=instruction.category.id,
+                    subcategory_id=instruction.subcategory.id)
 
 
 
+def generate_pdf(request, model_name, pk):
+    # Busca o modelo dinamicamente usando o nome fornecido
+    model = apps.get_model('doc', model_name)  # Assumindo que o app é 'doc'
+    
+    # Busca a instância do modelo com base no pk
+    try:
+        instance = model.objects.get(pk=pk)
+    except model.DoesNotExist:
+        return HttpResponse("Instância não encontrada", status=404)
 
+    # Cria o contexto do template com base nos campos do modelo
+    context = {
+        'name': getattr(instance, 'name', getattr(instance, 'title', 'Sem título')),
+        'content': instance.content if hasattr(instance, 'content') else 'Sem conteúdo',
+    }
+    
+    # Renderiza o HTML a partir de um template dinâmico
+    html_string = render_to_string('pdf/relatorio.html', context)
 
+    # Gera o PDF com xhtml2pdf
+    pdf_file = io.BytesIO()
+    pisa_status = pisa.CreatePDF(io.StringIO(html_string), dest=pdf_file)
+
+    if pisa_status.err:
+        return HttpResponse(f"Erro ao gerar PDF: {pisa_status.err}", status=500)
+
+    # Configura a resposta com o PDF gerado
+    file_name = f"{context['name']}.pdf".replace(" ", "_")  # Nome seguro para o arquivo
+    response = HttpResponse(pdf_file.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+
+    return response
 

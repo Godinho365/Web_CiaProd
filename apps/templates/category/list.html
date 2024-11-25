@@ -30,9 +30,12 @@
                             <a href="{% url 'list_section' %}" class="btn btn-secondary me-2">
                                 <i class="fas fa-arrow-left"></i> Voltar
                             </a>
+                            {% if user.is_superuser or is_contributor %}
                             <a href="{% url 'create_category' section.id %}" class="btn btn-primary">
                                 <i class="fas fa-plus-circle"></i> Nova
                             </a>
+                            {% endif %}
+
                         </div>
                     </div>
                     <div class="card-body">
@@ -59,7 +62,7 @@
                                                 </a>
                                             {% endif %}
                                             <div class="d-flex justify-content-center mt-2">
-                                                {% if user.is_superuser %}
+                                                {% if user.is_superuser or is_contributor %}
                                                     <a href="{% url 'update_category' section_id=section.id id=category.id %}" class="btn btn-sm btn-primary me-2">
                                                         <i class="fas fa-edit"></i> Editar
                                                     </a>

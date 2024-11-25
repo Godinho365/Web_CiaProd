@@ -46,213 +46,194 @@
   <div class="row">
     <div class="col-md-12">
       <div class="card mb-4">
-        <div class="card-header text-center">
-          <h5 class="card-title mb-0">{{ subcategory.name }}</h5>
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="card-title text-center w-100 mb-0">{{ subtopic.name }}</h5>
+          <a href="{% url 'generate_pdf' 'Subtopic' subtopic.id %}" class="btn btn-primary btn-sm ml-2" target="_blank">
+            <i class="fas fa-file-pdf"></i> Download
+          </a>
+          {% if user.is_superuser or is_contributor %}
+            <a href="{% url 'update_subtopic' section.id category.id subcategory.id topic.id subtopic.id %}" class="btn btn-warning btn-sm ml-2">
+            <i class="fas fa-edit"></i> Editar
+          </a>
+          <!-- Botão de Versões -->
+          <button type="button" class="btn btn-info btn-sm ml-2" data-toggle="modal" data-target="#versionHistoryModal">
+            <i class="fas fa-history"></i> Versões
+          </button>
+          {% endif %}
         </div>
 
-        <div class="container mt-4">
+        <div class="card-body">
           <div class="row">
-            <div class="col-md-12">
-              <div class="card mb-4">
-                <div class="card-header text-center">
-                  <h5 class="card-title mb-0">{{ subtopic.name }}</h5>
-                </div>
+            <div class="col-md-6 mb-3">
+              {% if subtopic.author %}
+              <div class="card text-center mb-3">
                 <div class="card-body">
-                  <div class="row">
-                    <div class="col-md-6 mb-3">
-                      {% if subtopic.author %}
-                      <div class="card text-center mb-3">
-                        <div class="card-body">
-                          <h6 class="card-title"><strong>Autor:</strong></h6>
-                          <p class="card-text">{{ subtopic.author.username }}</p>
-                        </div>
-                      </div>
-                      {% else %}
-                      <div class="card text-center mb-3">
-                        <div class="card-body">
-                          <h6 class="card-title"><strong>Autor:</strong></h6>
-                          <p class="card-text">Admin</p>
-                        </div>
-                      </div>
-                      {% endif %}
-
-                      <div class="card text-center mb-3">
-                        <div class="card-body">
-                          <h6 class="card-title"><strong>Data de Criação:</strong></h6>
-                          <p class="card-text">{{ subtopic.created_at|date:"d/m/Y H:i" }}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                      <div class="card text-center">
-                        <div class="card-body">
-                          <h6 class="card-title"><strong>Contagem de Visualizações:</strong></h6>
-                          <p class="card-text">{{ subtopic.view_count }}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="row mt-4">
-                    <div class="col-md-12">
-                      <div class="card">
-                        <div class="card-body">
-                          <h6 class="card-title"><strong>Conteúdo:</strong></h6>
-                          <p class="card-text">{{ subtopic.content|safe }}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="row mt-4">
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-header text-center">
-                                <h6 class="card-title mb-0">Histórico de Versões</h6>
-                            </div>
-                            <div class="card-body">
-                                <!-- Formulário de filtro de data -->
-                                <form method="get" class="mb-4">
-                                    <div class="row">
-                                        <div class="col-md-5">
-                                            <label for="start_date">Data Inicial</label>
-                                            <input type="date" id="start_date" name="start_date" class="form-control" value="{{ request.GET.start_date }}">
-                                        </div>
-                                        <div class="col-md-5">
-                                            <label for="end_date">Data Final</label>
-                                            <input type="date" id="end_date" name="end_date" class="form-control" value="{{ request.GET.end_date }}">
-                                        </div>
-                                        <div class="col-md-2 d-flex align-items-end">
-                                            <button type="submit" class="btn btn-primary w-100">
-                                                <i class="fas fa-filter"></i> Filtrar
-                                            </button>
-                                        </div>
-                                    </div>
-                                </form>
-                
-                                {% if page_obj %}
-                                    <div class="list-group">
-                                        {% for version in page_obj %}
-                                            <div class="list-group-item">
-                                                <h6 class="font-weight-bold">Data de Modificação:</h6>
-                                                <p class="mb-2">{{ version.revision.date_created|date:"d/m/Y H:i" }}</p>
-                
-                                                <h6 class="font-weight-bold">Modificado por:</h6>
-                                                <p class="mb-2">{{ version.revision.user }}</p>
-                
-                                                <h6 class="font-weight-bold">Comentário:</h6>
-                                                <p class="mb-2">{{ version.revision.comment|default:"Sem comentário" }}</p>
-                
-                                                <!-- Botão para restaurar versão -->
-                                                <a href="{% url 'restore_subtopic' subtopic_id=subtopic.id version_id=version.id %}" class="btn btn-warning btn-sm">
-                                                    Restaurar Versão
-                                                </a>
-                
-                                                <!-- Botão para exibir/ocultar alterações -->
-                                                {% if version.field_dict %}
-                                                    <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#alteracoes-{{ version.pk }}" aria-expanded="false" aria-controls="alteracoes-{{ version.pk }}">
-                                                        Mostrar Alterações
-                                                    </button>
-                
-                                                    <div class="collapse" id="alteracoes-{{ version.pk }}">
-                                                        <h6 class="font-weight-bold mt-3">Alterações:</h6>
-                                                        <ul class="list-unstyled">
-                                                            {% for field, value in version.field_dict.items %}
-                                                                <li>
-                                                                    <strong>{{ field }}:</strong>
-                                                                    <div class="diff-content">
-                                                                        {% if value|length > 0 %}
-                                                                            {% if version.revision.previous %}
-                                                                                {% for previous_field, previous_value in version.revision.previous.field_dict.items %}
-                                                                                    {% if previous_field == field %}
-                                                                                        <span class="diff-result">
-                                                                                            <del>{{ previous_value|safe }}</del>
-                                                                                            <span>{{ value|safe }}</span>
-                                                                                        </span>
-                                                                                    {% endif %}
-                                                                                {% endfor %}
-                                                                            {% else %}
-                                                                                <span class="diff-result">
-                                                                                    <span>{{ value|safe }}</span>
-                                                                                </span>
-                                                                            {% endif %}
-                                                                        {% else %}
-                                                                            <span class="diff-result">Sem alterações visíveis.</span>
-                                                                        {% endif %}
-                                                                    </div>
-                                                                </li>
-                                                            {% endfor %}
-                                                        </ul>
-                                                    </div>
-                                                {% else %}
-                                                    <p>Não houve alterações significativas nesta versão.</p>
-                                                {% endif %}
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                
-                                    <!-- Paginação -->
-                                    <div class="d-flex justify-content-center mt-4">
-                                        <nav aria-label="Page navigation">
-                                            <ul class="pagination">
-                                                {% if page_obj.has_previous %}
-                                                    <li class="page-item">
-                                                        <a class="page-link" href="?page=1{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" aria-label="First">
-                                                            <span aria-hidden="true">&laquo;&laquo;</span>
-                                                        </a>
-                                                    </li>
-                                                    <li class="page-item">
-                                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" aria-label="Previous">
-                                                            <span aria-hidden="true">&laquo;</span>
-                                                        </a>
-                                                    </li>
-                                                {% endif %}
-                                                {% for page_num in page_obj.paginator.page_range %}
-                                                    <li class="page-item {% if page_obj.number == page_num %}active{% endif %}">
-                                                        <a class="page-link" href="?page={{ page_num }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">{{ page_num }}</a>
-                                                    </li>
-                                                {% endfor %}
-                                                {% if page_obj.has_next %}
-                                                    <li class="page-item">
-                                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" aria-label="Next">
-                                                            <span aria-hidden="true">&raquo;</span>
-                                                        </a>
-                                                    </li>
-                                                    <li class="page-item">
-                                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" aria-label="Last">
-                                                            <span aria-hidden="true">&raquo;&raquo;</span>
-                                                        </a>
-                                                    </li>
-                                                {% endif %}
-                                            </ul>
-                                        </nav>
-                                    </div>
-                                {% else %}
-                                    <p class="text-center">Nenhuma versão encontrada.</p>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
+                  <h6 class="card-title"><strong>Autor:</strong></h6>
+                  <p class="card-text">{{ subtopic.author.username }}</p>
                 </div>
-                
-                
-                
+              </div>
+              {% else %}
+              <div class="card text-center mb-3">
+                <div class="card-body">
+                  <h6 class="card-title"><strong>Autor:</strong></h6>
+                  <p class="card-text">Admin</p>
+                </div>
+              </div>
+              {% endif %}
 
-                  <!-- Botão para voltar -->
-                  <div class="row mt-4">
-                    <div class="col-md-12 text-left">
-                      <a href="{% url 'list_subtopic' section_id=section.id category_id=category.id subcategory_id=subcategory.id topic_id=topic.id %}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Voltar
-                      </a>
-                    </div>
-                  </div>
+              <div class="card text-center mb-3">
+                <div class="card-body">
+                  <h6 class="card-title"><strong>Data de Criação:</strong></h6>
+                  <p class="card-text">{{ subtopic.created_at|date:"d/m/Y H:i" }}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <div class="card text-center">
+                <div class="card-body">
+                  <h6 class="card-title"><strong>Contagem de Visualizações:</strong></h6>
+                  <p class="card-text">{{ subtopic.view_count }}</p>
                 </div>
               </div>
             </div>
           </div>
+
+          <div class="row mt-4">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-body">
+                  <h6 class="card-title"><strong>Conteúdo:</strong></h6>
+                  <p class="card-text">{{ subtopic.content|safe }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Botão de Voltar -->
+          <div class="col-md-12 text-left">
+            <a href="{% url 'list_subtopic' section.id category.id subcategory.id topic.id %}" class="btn btn-secondary">
+              <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+          </div>
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Modal do Histórico de Versões -->
+<div class="modal fade" id="versionHistoryModal" tabindex="-1" role="dialog" aria-labelledby="versionHistoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="versionHistoryModalLabel">Histórico de Versões</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Aviso de Filtros -->
+        <div class="alert alert-danger" role="alert">
+          <p><strong>Atenção:</strong> Após o uso de filtros ou paginação, clique novamente em <strong>Versões</strong> para visualizar o histórico filtrado.</p>
+        </div>
+
+        <!-- Formulário de Filtro -->
+        <form id="versionFilterForm" method="get" class="mb-4">
+          <div class="row">
+            <div class="col-md-5">
+              <label for="start_date">Data Inicial</label>
+              <input type="date" id="start_date" name="start_date" class="form-control" value="{{ request.GET.start_date }}">
+            </div>
+            <div class="col-md-5">
+              <label for="end_date">Data Final</label>
+              <input type="date" id="end_date" name="end_date" class="form-control" value="{{ request.GET.end_date }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-filter"></i> Filtrar
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Listagem de Versões -->
+        {% if page_obj %}
+          {% if page_obj.object_list %}
+          <div class="list-group" id="versionList">
+            {% for version in page_obj %}
+            <div class="list-group-item">
+              <h6><strong>Data de Modificação:</strong> {{ version.revision.date_created|date:"d/m/Y H:i" }}</h6>
+              <p><strong>Modificado por:</strong> {{ version.revision.user }}</p>
+              <p><strong>Comentário:</strong> {{ version.revision.comment|default:"Sem comentário" }}</p>
+
+              <!-- Botões para Restaurar e Ver Detalhes -->
+              <div class="d-flex justify-content-between align-items-center mt-3">
+                <a href="{% url 'restore_topic' topic_id=topic.id version_id=version.id %}" class="btn btn-warning btn-sm">
+                  Restaurar Versão
+                </a>
+                <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target="#versionDetails{{ version.id }}" aria-expanded="false" aria-controls="versionDetails{{ version.id }}">
+                  Ver Alterações
+                </button>
+              </div>
+
+              <!-- Detalhes das Alterações (Expansível) -->
+              <div class="collapse mt-3" id="versionDetails{{ version.id }}">
+                <div class="card card-body">
+                  <h6>Alterações:</h6>
+                  <ul>
+                    {% for field, change in version.field_dict.items %}
+                    <li>
+                      <strong>{{ field|capfirst }}:</strong>
+                      {% if field == 'imagem' %}
+                        {% if change %}
+                        <img src="{{ change.url }}" alt="{{ field }}" class="img-fluid" style="max-height: 150px;">
+                        {% else %}
+                        <p>Sem imagem associada.</p>
+                        {% endif %}
+                      {% else %}
+                        {{ change|safe }}
+                      {% endif %}
+                    </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <!-- Paginação -->
+          <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+              {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link" href="?page=1" aria-label="Primeira página">&laquo;</a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Página anterior">&lt;</a>
+                </li>
+              {% endif %}
+              {% for num in page_obj.paginator.page_range %}
+                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                  <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+              {% endfor %}
+              {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Próxima página">&gt;</a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Última página">&raquo;</a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+          {% else %}
+          <p>Não há versões disponíveis.</p>
+          {% endif %}
+        {% endif %}
+      </div>
+      
   </div>
 </div>
 {% endblock %}

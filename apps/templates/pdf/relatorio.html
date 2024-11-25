@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .name {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .content {
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        .meta {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .meta span {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="name">{{ name }}</div>
+    <div class="content">{{ content|safe }}</div>
+</body>
+</html>

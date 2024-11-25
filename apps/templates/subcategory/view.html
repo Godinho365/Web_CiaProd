@@ -1,4 +1,5 @@
-{% extends "layouts/base.html" %} {% block content %}
+{% extends "layouts/base.html" %}
+{% block content %}
 <div class="container-fluid">
   <div class="header-body">
     <div class="row align-items-center py-4">
@@ -9,22 +10,16 @@
               <a href="{% url 'list_section' %}"><i class="fas fa-home"></i></a>
             </li>
             <li class="breadcrumb-item">
-              <a href="{% url 'list_category' section.id %}"
-                >{{ section.title }}</a
-              >
+              <a href="{% url 'list_category' section.id %}">{{ section.title }}</a>
             </li>
             <li class="breadcrumb-item">
               {% if category %}
-              <a href="{% url 'list_subcategory' section.id category.id %}"
-                >{{ category.name }}</a
-              >
+              <a href="{% url 'list_subcategory' section.id category.id %}">{{ category.name }}</a>
               {% else %}
               <span>Categorias</span>
               {% endif %}
             </li>
-            <li class="breadcrumb-item active" aria-current="page">
-              {{ subcategory.name }}
-            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ subcategory.name }}</li>
           </ol>
         </nav>
       </div>
@@ -35,77 +30,185 @@
     <div class="row">
       <div class="col-md-12">
         <div class="card mb-4">
-          <div class="card-header text-center">
-            <h5 class="card-title mb-0">{{ subcategory.name }}</h5>
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title text-center w-100 mb-0">{{ subcategory.name }}</h5>
+            <a href="{% url 'generate_pdf' 'Subcategory' subcategory.id %}" class="btn btn-primary btn-sm ml-2" target="_blank">
+              <i class="fas fa-file-pdf"></i> Download
+            </a>
+            {% if user.is_superuser or is_contributor %}
+            <a href="{% url 'update_subcategory' subcategory.id %}" class="btn btn-warning btn-sm ml-2">
+              <i class="fas fa-edit"></i> Editar
+            </a>
+            <button type="button" class="btn btn-info btn-sm ml-2" data-toggle="modal" data-target="#versionHistoryModal">
+              <i class="fas fa-history"></i> Versões
+            </button>
+            {% endif %}
           </div>
           <div class="card-body">
+            <!-- Exibe informações da Subcategoria -->
             <div class="row">
               <div class="col-md-6 mb-3">
-                {% if subcategory.author %}
                 <div class="card text-center mb-3">
                   <div class="card-body">
                     <h6 class="card-title"><strong>Autor:</strong></h6>
-                    <p class="card-text">{{ subcategory.author.username }}</p>
+                    <p class="card-text">{{ subcategory.author.username|default:"Admin" }}</p>
                   </div>
                 </div>
-                {% else %}
                 <div class="card text-center mb-3">
                   <div class="card-body">
-                    <h6 class="card-title"><strong>Autor:</strong></h6>
-                    <p class="card-text">Admin</p>
-                  </div>
-                </div>
-                {% endif %}
-
-                <div class="card text-center mb-3">
-                  <div class="card-body">
-                    <h6 class="card-title">
-                      <strong>Data de Criação:</strong>
-                    </h6>
-                    <p class="card-text">
-                      {{ subcategory.created_at|date:"d/m/Y H:i" }}
-                    </p>
+                    <h6 class="card-title"><strong>Data de Criação:</strong></h6>
+                    <p class="card-text">{{ subcategory.created_at|date:"d/m/Y H:i" }}</p>
                   </div>
                 </div>
               </div>
               <div class="col-md-6 mb-3">
                 <div class="card text-center">
                   <div class="card-body">
-                    <h6 class="card-title">
-                      <strong>Contagem de Visualizações:</strong>
-                    </h6>
+                    <h6 class="card-title"><strong>Contagem de Visualizações:</strong></h6>
                     <p class="card-text">{{ subcategory.view_count }}</p>
-                    <!-- Se existir -->
                   </div>
                 </div>
               </div>
             </div>
 
+            <!-- Exibe o conteúdo da Subcategoria -->
             <div class="row mt-4">
               <div class="col-md-12">
                 <div class="card">
                   <div class="card-body">
                     <h6 class="card-title"><strong>Conteúdo:</strong></h6>
                     <p class="card-text">{{ subcategory.content|safe }}</p>
-                    <!-- Exibindo conteúdo da subcategoria -->
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Botão para voltar -->
+            <!-- Botão de Voltar -->
             <div class="row mt-4">
               <div class="col-md-12 text-left">
-                <a
-                  href="{% url 'list_subcategory' section.id category.id %}"
-                  class="btn btn-secondary"
-                >
+                <a href="{% url 'list_subcategory' section.id category.id %}" class="btn btn-secondary">
                   <i class="fas fa-arrow-left"></i> Voltar
                 </a>
               </div>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal do Histórico de Versões -->
+<div class="modal fade" id="versionHistoryModal" tabindex="-1" role="dialog" aria-labelledby="versionHistoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="versionHistoryModalLabel">Histórico de Versões</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Aviso de Filtros -->
+        <div class="alert alert-danger" role="alert">
+          <p><strong>Atenção:</strong> Após o uso de filtros ou paginação, você precisará clicar novamente em <strong>Versões</strong> para visualizar o histórico filtrado.</p>
+        </div>
+
+        <!-- Formulário de Filtro -->
+        <form id="versionFilterForm" method="get" class="mb-4">
+          <div class="row">
+            <div class="col-md-5">
+              <label for="start_date">Data Inicial</label>
+              <input type="date" id="start_date" name="start_date" class="form-control" value="{{ request.GET.start_date }}">
+            </div>
+            <div class="col-md-5">
+              <label for="end_date">Data Final</label>
+              <input type="date" id="end_date" name="end_date" class="form-control" value="{{ request.GET.end_date }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-filter"></i> Filtrar
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Listagem de Versões -->
+        {% if page_obj %}
+        <div class="list-group" id="versionList">
+          {% for version in page_obj %}
+          <div class="list-group-item">
+            <h6><strong>Data de Modificação:</strong> {{ version.revision.date_created|date:"d/m/Y H:i" }}</h6>
+            <p><strong>Modificado por:</strong> {{ version.revision.user }}</p>
+            <p><strong>Comentário:</strong> {{ version.revision.comment|default:"Sem comentário" }}</p>
+
+            <!-- Botões para Restaurar e Ver Detalhes -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              <a href="{% url 'restore_subcategory' subcategory_id=subcategory.id version_id=version.id %}" class="btn btn-warning btn-sm">
+                Restaurar Versão
+              </a>
+              <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target="#versionDetails{{ version.id }}" aria-expanded="false" aria-controls="versionDetails{{ version.id }}">
+                Ver Alterações
+              </button>
+            </div>
+
+            <!-- Detalhes das Alterações (Expansível) -->
+            <div class="collapse mt-3" id="versionDetails{{ version.id }}">
+              <div class="card card-body">
+                <h6>Alterações:</h6>
+                <ul>
+                  {% for field, change in version.field_dict.items %}
+                  <li>
+                    <strong>{{ field|capfirst }}:</strong>
+                    {% if field == 'imagem' %}
+                      {% if change %}
+                      <img src="{{ change.url }}" alt="{{ field }}" class="img-fluid" style="max-height: 150px;">
+                      {% else %}
+                      <p>Sem imagem associada.</p>
+                      {% endif %}
+                    {% elif field == 'date_field' %}
+                      {{ change|date:"d/m/Y" }}
+                    {% else %}
+                      {{ change|safe }}
+                    {% endif %}
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Paginação -->
+        <div class="d-flex justify-content-center mt-4">
+          <nav>
+            <ul class="pagination" id="paginationLinks">
+              {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                  <span aria-hidden="true">&laquo;</span>
+                </a>
+              </li>
+              {% endif %}
+              {% for page_num in page_obj.paginator.page_range %}
+              <li class="page-item {% if page_obj.number == page_num %}active{% endif %}">
+                <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
+              </li>
+              {% endfor %}
+              {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                  <span aria-hidden="true">&raquo;</span>
+                </a>
+              </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% else %}
+        <p>Nenhuma versão encontrada.</p>
+        {% endif %}
       </div>
     </div>
   </div>

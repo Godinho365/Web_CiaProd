@@ -58,9 +58,11 @@
                         <a href="{% url 'list_subtopic' section_id=section.id category_id=category.id subcategory_id=subcategory.id topic_id=topic.id %}" class="btn btn-secondary me-2">
                             <i class="fas fa-arrow-left"></i> Voltar
                         </a>
+                        {% if user.is_superuser or is_contributor %}
                         <a href="{% url 'create_instruction' section_id=subcategory.category.section.id category_id=subcategory.category.id subcategory_id=subcategory.id topic_id=topic.id subtopic_id=subtopic.id %}" class="btn btn-primary">
                             <i class="fas fa-plus-circle"></i> Nova
                         </a>
+                        {% endif %}
                         {% if user.is_superuser %}
                         <a href="{% url 'order_instruction' section.id category.id subcategory.id topic.id subtopic.id %}" class="btn btn-warning">
                             <i class="fas fa-arrows-alt"></i> Ordenar
@@ -86,9 +88,9 @@
                                             </td>
                                             <td class="text-center">
                                                 <a href="{% url 'view_instruction' section_id=instruction.subcategory.category.section.id category_id=instruction.subcategory.category.id subcategory_id=instruction.subcategory.id topic_id=topic.id subtopic_id=subtopic.id instruction_id=instruction.id %}" class="btn btn-sm btn-info me-2">
-                                                    <i class="fas fa-eye"></i> Ver
+                                                    <i class="fas fa-book-open"></i> Ler
                                                 </a>
-                                                {% if user.is_superuser %}
+                                                {% if user.is_superuser or is_contributor %}
                                                 <a href="{% url 'update_instruction' section_id=subcategory.category.section.id category_id=subcategory.category.id subcategory_id=subcategory.id topic_id=topic.id subtopic_id=subtopic.id id=instruction.id %}" class="btn btn-sm btn-primary me-2">
                                                     <i class="fas fa-edit"></i> Editar
                                                 </a>

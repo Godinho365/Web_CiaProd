@@ -45,8 +45,14 @@ urlpatterns = [
     path('section/<int:section_id>/category/<int:category_id>/subcategory/<int:subcategory_id>/topic/<int:topic_id>/subtopic/<int:subtopic_id>/view/', view_subtopic, name='view_subtopic'),
 
 
+    path('category/<int:category_id>/restore/<int:version_id>/', restore_category, name='restore_category'),
+    path('subcategory/<int:subcategory_id>/restore/<int:version_id>/', restore_subcategory, name='restore_subcategory'),
+    path('topic/<int:topic_id>/restore/<int:version_id>/', restore_topic, name='restore_topic'),
     path('subtopic/<int:subtopic_id>/restore/<int:version_id>/', restore_subtopic, name='restore_subtopic'),
+    path('instruction/<int:instruction_id>/restore/<int:version_id>/', restore_instruction,name='restore_instruction'),
 
+    
+    path('gerar-pdf/<str:model_name>/<int:pk>/', generate_pdf, name='generate_pdf'),
     
    
 

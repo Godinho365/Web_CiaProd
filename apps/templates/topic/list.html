@@ -43,9 +43,11 @@
                                 <i class="fas fa-arrow-left"></i> Voltar
                             </a>
                         {% endif %}
+                        {% if user.is_superuser or is_contributor %}
                         <a href="{% url 'create_topic' category.section.id category.id subcategory.id %}" class="btn btn-primary">
                             <i class="fas fa-plus-circle"></i> Novo
                         </a>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="card-body">
@@ -74,7 +76,7 @@
                                             </a>
                                         {% endif %}
 
-                                        {% if user.is_superuser %}
+                                        {% if user.is_superuser or is_contributor %}
                                             <div class="d-flex justify-content-center mt-2">
                                                 <a href="{% url 'update_topic' category.section.id category.id subcategory.id topic.id %}" class="btn btn-sm btn-primary me-2">
                                                     <i class="fas fa-edit"></i> Editar

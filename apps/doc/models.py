@@ -20,7 +20,7 @@ class Instruction(models.Model):
     order = models.IntegerField(default=0)
 
     class Meta:
-        ordering = ['order']
+        ordering = ['order', 'created_at', 'title']
     
     def __str__(self):
         return self.title
@@ -36,7 +36,7 @@ class Section(models.Model):
     imagem = models.ImageField(upload_to='section_imagens/', blank=True, null=True)
 
     class Meta:
-        ordering = ['order']
+        ordering = ['order', 'created_at', 'title']
 
     def __str__(self):
         return self.title
@@ -53,7 +53,7 @@ class Category(models.Model):
     imagem = models.ImageField(upload_to='categories_imagens/', blank=True, null=True)
 
     class Meta:
-        ordering = ['order']
+        ordering = ['order', 'created_at', 'name']
 
     def __str__(self):
         return self.name
@@ -71,7 +71,7 @@ class Subcategory(models.Model):
     imagem = models.ImageField(upload_to='subcategory_imagens/', blank=True, null=True)
 
     class Meta:
-        ordering = ['order']
+        ordering = ['order', 'created_at', 'name']
 
     def __str__(self):
         return self.name
@@ -90,7 +90,7 @@ class Topic(models.Model):
     imagem = models.ImageField(upload_to='topic_imagens/', blank=True, null=True)
 
     class Meta:
-        ordering = ['order']
+        ordering = ['order', 'created_at', 'name']
 
     def __str__(self):
         return self.name
@@ -107,7 +107,7 @@ class Subtopic(models.Model):
     imagem = models.ImageField(upload_to='subtopic_imagens/', blank=True, null=True)
 
     class Meta:
-        ordering = ['order']
+        ordering = ['order', 'created_at', 'name']
 
     def __str__(self):
         return self.name

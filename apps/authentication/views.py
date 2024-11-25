@@ -34,9 +34,9 @@ def login_view(request):
                 UserActivity.objects.create(user=user, login_time=datetime.now())
                 return redirect("/")
             else:
-                msg = 'Invalid credentials'
+                msg = 'Credenciais inválidas'
         else:
-            msg = 'Error validating the form'
+            msg = 'Erro ao validar o formulário'
 
     return render(request, "accounts/login.html", {"form": form, "msg": msg})
 
@@ -261,6 +261,23 @@ def my_profile(request):
 
     return render(request, 'home/profile.html', {'form': form})
 
+
+from django.contrib.auth.views import PasswordResetView
+from django.shortcuts import redirect
+from django.urls import reverse
+
+class CustomPasswordResetView(PasswordResetView):
+    template_name = 'accounts/password_reset_form.html'
+    
+    def form_valid(self, form):
+        # Depois que o formulário for validado, enviamos o e-mail de recuperação
+        response = super().form_valid(form)
+
+        # Definir a mensagem de sucesso
+        success_message = "O e-mail de recuperação de senha foi enviado com sucesso!"
+        
+        # Redireciona para a página de login com a mensagem de sucesso como parâmetro
+        return redirect(f"{reverse('login')}?success_message={success_message}")
 
 
 

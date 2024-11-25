@@ -27,38 +27,69 @@ class LoginForm(forms.Form):
 
 
 class SignUpForm(UserCreationForm):
+    # Campo de nome
+    first_name = forms.CharField(
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "Nome",
+                "class": "form-control"
+            }
+        )
+    )
+
+    # Campo de sobrenome
+    last_name = forms.CharField(
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "Sobrenome",
+                "class": "form-control"
+            }
+        )
+    )
+
+    # Campo de nome de usuário
     username = forms.CharField(
         widget=forms.TextInput(
             attrs={
-                "placeholder": "Username",
+                "placeholder": "Nome de usuário",
                 "class": "form-control"
             }
-        ))
+        )
+    )
+
+    # Campo de email
     email = forms.EmailField(
         widget=forms.EmailInput(
             attrs={
                 "placeholder": "Email",
                 "class": "form-control"
             }
-        ))
+        )
+    )
+
+    # Campo de senha
     password1 = forms.CharField(
         widget=forms.PasswordInput(
             attrs={
-                "placeholder": "Password",
+                "placeholder": "Senha",
                 "class": "form-control"
             }
-        ))
+        )
+    )
+
+    # Campo de confirmação de senha
     password2 = forms.CharField(
         widget=forms.PasswordInput(
             attrs={
-                "placeholder": "Password check",
+                "placeholder": "Confirmação de senha",
                 "class": "form-control"
             }
-        ))
+        )
+    )
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password1', 'password2')
+        fields = ('first_name', 'last_name', 'username', 'email', 'password1', 'password2')
 
 
 

@@ -337,10 +337,13 @@
               <span>Suporte</span>
             </a>
             <div class="dropdown-divider"></div>
-            <a href="{% url 'logout' %}" class="dropdown-item">
-              <i class="ni ni-user-run text-red"></i>
-              <span>Sair</span>
-            </a>
+            <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="dropdown-item">
+                    <i class="ni ni-user-run text-red"></i>
+                    <span>Sair</span>
+                </button>
+            </form>
           </div>
         </li>
       </ul>
