@@ -268,7 +268,7 @@ def delete_category(request, id):
     return render(request, 'category/delete.html', {'category': category})
 
 @login_required
-def view_category(request, category_id):
+def view_category(request, section_id, category_id):
     # Obtendo a categoria pelo ID
     category = get_object_or_404(Category, id=category_id)
 
@@ -277,7 +277,7 @@ def view_category(request, category_id):
     category.save()
 
     # Obtendo a seção associada à categoria
-    section = category.section
+    section = get_object_or_404(Section, id=section_id)
 
     # Obter o histórico de versões da categoria
     versions = Version.objects.get_for_object(category)
@@ -293,7 +293,6 @@ def view_category(request, category_id):
             versions = versions.filter(revision__date_created__gte=start_date)  # Filtro para data inicial
         except ValueError:
             versions = versions.none()  # Caso a data esteja no formato incorreto
-            # Você pode adicionar uma mensagem de erro ou feedback aqui
 
     # Filtro para a data final (end_date)
     if end_date:
@@ -302,15 +301,16 @@ def view_category(request, category_id):
             versions = versions.filter(revision__date_created__lte=end_date)  # Filtro para data final
         except ValueError:
             versions = versions.none()  # Caso a data esteja no formato incorreto
-            # Você pode adicionar uma mensagem de erro ou feedback aqui
 
     # Paginação: configura o Paginator e obtém a página atual
     paginator = Paginator(versions, 10)  # 3 versões por página (ajuste conforme necessário)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # Verificando se o usuário é um contribuídor
     is_contributor = request.user.groups.filter(name='Contribuidor').exists()
 
+    
     # Preparando o contexto para o template
     context = {
         'category': category,  # Adicionando a categoria ao contexto
@@ -318,10 +318,13 @@ def view_category(request, category_id):
         'content': category.content,  # Presumindo que haja um campo 'content' no modelo Category
         'page_obj': page_obj,  # Passa o objeto de página com as versões paginadas
         'is_contributor': is_contributor,
+        
+        
     }
 
     # Renderizando o template com o contexto
     return render(request, 'category/view.html', context)
+
 
 @login_required
 def list_subcategory(request, section_id, category_id):
@@ -455,17 +458,15 @@ def delete_subcategory(request, section_id, category_id, id):
     return redirect('list_subcategory', section_id=section_id, category_id=category_id)
 
 @login_required
-def view_subcategory(request, subcategory_id):
-    # Obtendo a subcategoria pelo ID
-    subcategory = get_object_or_404(Subcategory, id=subcategory_id)
+def view_subcategory(request, section_id, category_id, subcategory_id):
+    # Obtendo a seção, categoria e subcategoria com base nos IDs fornecidos
+    section = get_object_or_404(Section, id=section_id)
+    category = get_object_or_404(Category, id=category_id, section=section)  # Garantindo que a categoria esteja associada à seção
+    subcategory = get_object_or_404(Subcategory, id=subcategory_id, category=category)  # Garantindo que a subcategoria esteja associada à categoria
 
     # Incrementando o contador de visualizações
     subcategory.view_count += 1
     subcategory.save()
-
-    # Obtendo a categoria e a seção associadas à subcategoria
-    section = subcategory.category.section
-    category = subcategory.category
 
     # Obter o histórico de versões da subcategoria
     versions = Version.objects.get_for_object(subcategory)
@@ -493,7 +494,7 @@ def view_subcategory(request, subcategory_id):
             versions = versions.none()
 
     # Paginação: configura o Paginator e obtém a página atual
-    paginator = Paginator(versions, 10)  # 3 versões por página (ajuste conforme necessário)
+    paginator = Paginator(versions, 10)  # 10 versões por página (ajuste conforme necessário)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -939,18 +940,16 @@ def delete_topic(request, section_id, category_id, subcategory_id, id):
     })
 
 @login_required
-def view_topic(request, topic_id):
-    # Obtendo o tópico pelo ID
-    topic = get_object_or_404(Topic, id=topic_id)
+def view_topic(request, section_id, category_id, subcategory_id, topic_id):
+    # Obtendo os objetos com base nos IDs
+    section = get_object_or_404(Section, id=section_id)
+    category = get_object_or_404(Category, id=category_id, section=section)
+    subcategory = get_object_or_404(Subcategory, id=subcategory_id, category=category)
+    topic = get_object_or_404(Topic, id=topic_id, subcategory=subcategory)
 
     # Incrementando o contador de visualizações
     topic.view_count += 1
     topic.save()
-
-    # Recuperando as relações do tópico
-    subcategory = topic.subcategory  # Supondo que Topic tem um campo subcategory
-    category = subcategory.category  # Supondo que Subcategory tem um campo category
-    section = category.section       # Supondo que Category tem um campo section
 
     # Obter o histórico de versões do tópico
     versions = Version.objects.get_for_object(topic)
@@ -982,6 +981,7 @@ def view_topic(request, topic_id):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # Verifica se o usuário é contribuidor
     is_contributor = request.user.groups.filter(name='Contribuidor').exists()
 
     # Preparando o contexto para o template
@@ -994,7 +994,7 @@ def view_topic(request, topic_id):
         'page_obj': page_obj,  # Passando o objeto de página com as versões paginadas
         'start_date': start_date if start_date else '',
         'end_date': end_date if end_date else '',
-        'is_contributor': is_contributor,  # Verifica se o usuário é contribuid
+        'is_contributor': is_contributor,  # Verifica se o usuário é contribuidor
     }
 
     # Renderizando o template com o contexto
@@ -1401,3 +1401,9 @@ def generate_pdf(request, model_name, pk):
 
     return response
 
+
+def sidenav_view(request):
+    sections = Section.objects.prefetch_related(
+        'categories__subcategories__topics__subtopics__instructions'
+    )
+    return render(request, 'includes/pesquisa.html', {'sections': sections})

@@ -1,0 +1,130 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+
+<!-- Estilos embutidos -->
+<style>
+  /* Limitar a largura do container sem perder a responsividade */
+  .custom-container {
+    max-width: 600px; /* Ajuste conforme necessário */
+    margin: auto; /* Centraliza o container */
+  }
+
+  /* Ajustes para listas aninhadas */
+  .nested-list-1 {
+    padding-left: 15px;
+  }
+
+  .nested-list-2 {
+    padding-left: 30px;
+  }
+
+  .nested-list-3 {
+    padding-left: 45px;
+  }
+
+  .nested-list-4 {
+    padding-left: 60px;
+  }
+
+  .nested-list-5 {
+    padding-left: 75px;
+  }
+</style>
+
+<!-- Sidebar dentro de um container ajustado -->
+<div class="custom-container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-12">
+      <ul class="list-group">
+        {% for section in sections %}
+          <li class="list-group-item p-1">
+            <!-- Título da seção -->
+            <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#section-{{ section.id }}">
+              <i class="fas fa-folder"></i> <span class="small">{{ section.title }}</span>
+              <i class="fas fa-chevron-right float-right toggle-icon"></i>
+            </button>
+            <div id="section-{{ section.id }}" class="collapse show">
+              <ul class="list-group nested-list-1">
+                {% for category in section.categories.all %}
+                  <li class="list-group-item p-1">
+                    <!-- Título da categoria -->
+                    <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#category-{{ category.id }}">
+                      <i class="fas fa-tag"></i> <a href="{% url 'view_category' section.id category.id %}" class="small">{{ category.name }}</a>
+                      <i class="fas fa-chevron-right float-right toggle-icon"></i>
+                    </button>
+                    <div id="category-{{ category.id }}" class="collapse show">
+                      <ul class="list-group nested-list-2">
+                        {% for subcategory in category.subcategories.all %}
+                          <li class="list-group-item p-1">
+                            <!-- Título da subcategoria -->
+                            <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#subcategory-{{ subcategory.id }}">
+                              <i class="fas fa-cogs"></i> <a href="{% url 'view_subcategory' section.id category.id subcategory.id %}" class="small">{{ subcategory.name }}</a>
+                              <i class="fas fa-chevron-right float-right toggle-icon"></i>
+                            </button>
+                            <div id="subcategory-{{ subcategory.id }}" class="collapse show">
+                              <ul class="list-group nested-list-3">
+                                {% for topic in subcategory.topics.all %}
+                                  <li class="list-group-item p-1">
+                                    <!-- Título do tópico -->
+                                    <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#topic-{{ topic.id }}">
+                                      <i class="fas fa-book"></i> <a href="{% url 'view_topic' section.id category.id subcategory.id topic.id %}" class="small">{{ topic.name }}</a>
+                                      <i class="fas fa-chevron-right float-right toggle-icon"></i>
+                                    </button>
+                                    <div id="topic-{{ topic.id }}" class="collapse show">
+                                      <ul class="list-group nested-list-4">
+                                        {% for subtopic in topic.subtopics.all %}
+                                          <li class="list-group-item p-1">
+                                            <!-- Título do subtópico -->
+                                            <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#subtopic-{{ subtopic.id }}">
+                                              <i class="fas fa-list-ul"></i> <a href="{% url 'view_subtopic' section.id category.id subcategory.id topic.id subtopic.id %}" class="small">{{ subtopic.name }}</a>
+                                              <i class="fas fa-chevron-right float-right toggle-icon"></i>
+                                            </button>
+                                            <div id="subtopic-{{ subtopic.id }}" class="collapse show">
+                                              <ul class="list-group nested-list-5">
+                                                {% for instruction in subtopic.instructions.all %}
+                                                  <li class="list-group-item p-1">
+                                                    <a href="{% url 'view_instruction' section.id category.id subcategory.id topic.id subtopic.id instruction.id %}" class="small">
+                                                      <i class="fas fa-file-alt"></i> <span class="small">{{ instruction.title }}</span>
+                                                    </a>
+                                                  </li>
+                                                {% endfor %}
+                                              </ul>
+                                            </div>
+                                          </li>
+                                        {% endfor %}
+                                      </ul>
+                                    </div>
+                                  </li>
+                                {% endfor %}
+                              </ul>
+                            </div>
+                          </li>
+                        {% endfor %}
+                      </ul>
+                    </div>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript para alternar o ícone -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".toggle-button").forEach(function (button) {
+      button.addEventListener("click", function () {
+        const icon = this.querySelector(".toggle-icon");
+        icon.classList.toggle("fa-chevron-right");
+        icon.classList.toggle("fa-chevron-down");
+      });
+    });
+  });
+</script>
+
+{% endblock %}

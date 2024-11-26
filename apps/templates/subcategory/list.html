@@ -62,7 +62,7 @@
                                             </h5>
 
                                             {% if subcategory.content %}
-                                                <a href="{% url 'view_subcategory' subcategory.id %}" class="btn btn-sm btn-info mt-2">
+                                                <a href="{% url 'view_subcategory' section_id=section.id category_id=category.id subcategory_id=subcategory.id %}" class="btn btn-sm btn-info mt-2">
                                                     <i class="fas fa-book-open"></i> Ler
                                                 </a>
                                             {% endif %}
