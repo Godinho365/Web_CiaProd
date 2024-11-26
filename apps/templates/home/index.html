@@ -123,37 +123,178 @@
     </div>
 
     <!-- Page content -->
-    <div class="container-fluid mt--6">
-      <div class="row">
-        <div class="col-xl-8">
-          <div class="card bg-default">
-            <div class="card-header bg-transparent">
-              <div class="row align-items-center">
-                <div class="col">
-                  <h6 class="text-light text-uppercase ls-1 mb-1">Overview</h6>
-                  <h5 class="h3 text-white mb-0">Sales value</h5>
-                </div>
-                <div class="col">
-                  <ul class="nav nav-pills justify-content-end">
-                    <li class="nav-item mr-2 mr-md-0" data-toggle="chart" data-target="#chart-sales-dark" data-update='{"data":{"datasets":[{"data":[0, 20, 10, 30, 15, 40, 20, 60, 60]}]}}' data-prefix="$" data-suffix="k">
-                      <a href="#" class="nav-link py-2 px-3 active" data-toggle="tab">
-                        <span class="d-none d-md-block">Month</span>
-                        <span class="d-md-none">M</span>
-                      </a>
-                    </li>
-                    <li class="nav-item" data-toggle="chart" data-target="#chart-sales-dark" data-update='{"data":{"datasets":[{"data":[0, 20, 5, 25, 10, 30, 15, 40, 40]}]}}' data-prefix="$" data-suffix="k">
-                      <a href="#" class="nav-link py-2 px-3" data-toggle="tab">
-                        <span class="d-none d-md-block">Week</span>
-                        <span class="d-md-none">W</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </div>
+<div class="container-fluid mt--6">
+  <div class="row">
+    <div class="col-xl-8">
+      <div class="card bg-default">
+        <div class="card-header bg-transparent">
+          <div class="row align-items-center">
+            <div class="col">
+              <h6 class="text-light text-uppercase ls-1 mb-1">Overview</h6>
+              <h5 class="h3 text-white mb-0">Entradas no Sistema</h5>
             </div>
-            <div class="card-body">
-              <!-- Chart -->
-              <div class="chart">
+            <div class="col">
+              <ul class="nav nav-pills justify-content-end">
+                <li class="nav-item mr-2 mr-md-0">
+                  <a
+                    href="#"
+                    class="nav-link py-2 px-3 active"
+                    onclick="setFilter('month')"
+                  >
+                    <span class="d-none d-md-block">Mês</span>
+                    <span class="d-md-none">M</span>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a
+                    href="#"
+                    class="nav-link py-2 px-3"
+                    onclick="setFilter('week')"
+                  >
+                    <span class="d-none d-md-block">Semana</span>
+                    <span class="d-md-none">W</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Chart -->
+          <div class="chart">
+            <canvas id="chart-sales-dark" class="chart-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Obtendo os dados do backend
+  var days = JSON.parse("{{ days|escapejs }}");
+  var entries = JSON.parse("{{ entries|escapejs }}");
+
+  var chart;
+  var currentFilter = "month";
+
+  // Atualiza o filtro e os dados do gráfico
+  function setFilter(filter) {
+    currentFilter = filter;
+    updateChartData();
+  }
+
+  // Atualiza os dados do gráfico com base no filtro atual
+  function updateChartData() {
+    const groupedData = groupDataByPeriod(currentFilter);
+
+    if (chart) {
+      chart.destroy();
+    }
+
+    const ctx = document.getElementById("chart-sales-dark").getContext("2d");
+    chart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: groupedData.labels,
+        datasets: [
+          {
+            label: "Entradas por Período",
+            data: groupedData.entries,
+            borderColor: "rgba(75, 192, 192, 1)",
+            backgroundColor: "rgba(75, 192, 192, 0.2)",
+            borderWidth: 1,
+            fill: true,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text:
+                currentFilter === "day"
+                  ? "Dia"
+                  : currentFilter === "week"
+                  ? "Semana"
+                  : currentFilter === "month"
+                  ? "Mês"
+                  : "Ano",
+              color: "#ffffff",
+            },
+          },
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: "Número de Entradas",
+              color: "#ffffff",
+            },
+          },
+        },
+        plugins: {
+          legend: {
+            labels: {
+              color: "#ffffff",
+            },
+          },
+          tooltip: {
+            callbacks: {
+              label: function (tooltipItem) {
+                return `Entradas: ${tooltipItem.raw}`;
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  // Função para agrupar os dados conforme o filtro
+  function groupDataByPeriod(period) {
+    let groupedLabels = [];
+    let groupedEntries = [];
+
+    days.forEach((day, index) => {
+      let label;
+      let entry = entries[index];
+
+      if (period === "day") {
+        label = day;
+      } else if (period === "week") {
+        label = "Semana " + getWeekNumber(new Date(day));
+      } else if (period === "month") {
+        const date = new Date(day);
+        label = date.toLocaleString("default", { month: "long" });
+      } else if (period === "year") {
+        label = new Date(day).getFullYear().toString();
+      }
+
+      if (!groupedLabels.includes(label)) {
+        groupedLabels.push(label);
+        groupedEntries.push(entry);
+      } else {
+        const index = groupedLabels.indexOf(label);
+        groupedEntries[index] += entry;
+      }
+    });
+
+    return { labels: groupedLabels, entries: groupedEntries };
+  }
+
+  // Calcula o número da semana de uma data
+  function getWeekNumber(date) {
+    const startOfYear = new Date(date.getFullYear(), 0, 1);
+    const pastDaysOfYear = (date - startOfYear) / 86400000;
+    return Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
+  }
+
+  // Inicializa o gráfico
+  updateChartData();
+</script>
                 <!-- Chart wrapper -->
                 <canvas id="chart-sales-dark" class="chart-canvas"></canvas>
               </div>

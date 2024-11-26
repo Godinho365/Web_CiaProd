@@ -43,12 +43,17 @@ def list_section(request):
 
     # Verifica se o usuário é superusuário ou pertence ao grupo "Contribuidor"
     is_contributor = request.user.groups.filter(name='Contribuidor').exists()
+
+    sections = Section.objects.prefetch_related( 
+        'categories__subcategories__topics__subtopics__instructions'
+    )
     
 
     return render(request, 'section/list.html', {
         'page_obj': page_obj,
         'search_query': search_query,
         'is_contributor': is_contributor,  # Passando o valor booleano
+        'sections': sections,
         
     })
 @login_required
@@ -305,7 +310,11 @@ def view_category(request, section_id, category_id):
     # Paginação: configura o Paginator e obtém a página atual
     paginator = Paginator(versions, 10)  # 3 versões por página (ajuste conforme necessário)
     page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginator.get_page(page_number) 
+    
+    sections = Section.objects.prefetch_related( 
+        'categories__subcategories__topics__subtopics__instructions'
+    )
 
     # Verificando se o usuário é um contribuídor
     is_contributor = request.user.groups.filter(name='Contribuidor').exists()
@@ -318,6 +327,7 @@ def view_category(request, section_id, category_id):
         'content': category.content,  # Presumindo que haja um campo 'content' no modelo Category
         'page_obj': page_obj,  # Passa o objeto de página com as versões paginadas
         'is_contributor': is_contributor,
+        'sections': sections,
         
         
     }
@@ -1231,7 +1241,7 @@ def restore_category(request, category_id, version_id):
         messages.success(request, 'Versão restaurada com sucesso!')
 
         # Redireciona para a categoria restaurada
-        return redirect('view_category', category_id=category.id)
+        return redirect('view_category', section_id=category.section.id, category_id=category.id)
 
     # Se o método não for GET, redireciona para a lista de categorias
     return redirect('list_category', section_id=category.section.id)
@@ -1258,7 +1268,10 @@ def restore_subcategory(request, subcategory_id, version_id):
         messages.success(request, 'Versão restaurada com sucesso!')
 
         # Redireciona para a subcategoria restaurada
-        return redirect('view_subcategory', subcategory_id=subcategory.id)
+        return redirect('view_subcategory', 
+                        section_id=subcategory.category.section.id, 
+                        category_id=subcategory.category.id, 
+                        subcategory_id=subcategory.id)
 
     # Se o método não for GET, redireciona para a lista de subcategorias
     return redirect('list_subcategory', category_id=subcategory.category.id)
@@ -1284,8 +1297,11 @@ def restore_topic(request, topic_id, version_id):
         reversion.set_comment('Versão restaurada.')
         messages.success(request, 'Versão restaurada com sucesso!')
 
-        # Redireciona para o tópico restaurado
-        return redirect('view_topic', topic_id=topic.id)
+        return redirect('view_topic', 
+                            section_id=topic.subcategory.category.section.id, 
+                            category_id=topic.subcategory.category.id, 
+                            subcategory_id=topic.subcategory.id, 
+                            topic_id=topic.id)  # Redireciona para o tópico
 
     # Se o método não for GET, redireciona para a lista de tópicos
     return redirect('list_topic', subcategory_id=topic.subcategory.id)
@@ -1406,4 +1422,5 @@ def sidenav_view(request):
     sections = Section.objects.prefetch_related(
         'categories__subcategories__topics__subtopics__instructions'
     )
-    return render(request, 'includes/pesquisa.html', {'sections': sections})
+    return {'sections': sections}
+

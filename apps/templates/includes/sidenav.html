@@ -3,7 +3,7 @@
     <!-- Brand -->
     <div class="sidenav-header  align-items-center">
       <a class="navbar-brand" href="/">
-        <img src="/static/assets/img/brand/blue.png" class="navbar-brand-img" alt="Argon Design - Jinja Template Logo.">
+        <img src="" class="navbar-brand-img"  >
       </a>
     </div>
     <div class="navbar-inner">
@@ -26,7 +26,7 @@
               <span class="nav-link-text">Dashboard</span>
             </a>
           </li>
-          <li class="nav-item">
+          {% comment %} <li class="nav-item">
             <a class="nav-link {% if 'icons' in segment %} active {% endif %}" href="/icons.html">
               <i class="ni ni-planet text-orange"></i>
               <span class="nav-link-text">Icons</span>
@@ -44,8 +44,8 @@
               <i class="ni ni-bullet-list-67 text-default"></i>
               <span class="nav-link-text">Tables</span>
             </a>
-          </li>
-          <li class="nav-item">
+          </li> {% endcomment %}
+          {% comment %} <li class="nav-item">
             <a class="nav-link" href="/login.html">
               <i class="ni ni-key-25 text-info"></i>
               <span class="nav-link-text">Login (template)</span>
@@ -56,9 +56,9 @@
               <i class="ni ni-circle-08 text-pink"></i>
               <span class="nav-link-text">Register (template)</span>
             </a>
-          </li>
+          </li> {% endcomment %}
 
-          <li class="nav-item">
+          {% comment %} <li class="nav-item">
             <form method="POST" action="{% url 'logout' %}" style="display:inline;">
                 {% csrf_token %}
                 <button type="submit" class="nav-link btn btn-link">
@@ -66,7 +66,7 @@
                     <span class="nav-link-text">Logout</span>
                 </button>
             </form>
-          </li>           
+          </li>            {% endcomment %}
         </ul>
         <!-- Divider -->
         <hr class="my-3">
@@ -77,34 +77,169 @@
         <!-- Navigation -->
         <ul class="navbar-nav mb-md-3">
 
-          <li class="nav-item">
-            <a class="nav-link" 
-               target="_blank" 
-               href="{% url 'list_section' %}">
-                <i class="ni ni-book-bookmark"></i>
-                <span class="nav-link-text">Documentação</span>
+          <li class="nav-item d-flex align-items-center">
+            <a class="nav-link" target="_blank" href="{% url 'list_section' %}">
+              <i class="ni ni-book-bookmark"></i>
+              <span class="nav-link-text">Documentação</span>
             </a>
+            <!-- Botão com ícone para abrir o modal -->
+            <button type="button" class="btn btn-link p-0 ms-2" data-toggle="modal" data-target="#listModal" aria-label="Abrir Lista" onclick="console.log('ESTOU AQUI')">
+              <i class="fas fa-network-wired"></i>
+            </button>
           </li>
+
+
+          <style>
+            /* Limitar a largura do container sem perder a responsividade */
+            .custom-container {
+              max-width: 600px; /* Ajuste conforme necessário */
+              margin: auto; /* Centraliza o container */
+            }
+          
+            /* Ajustes para listas aninhadas */
+            .nested-list-1 {
+              padding-left: 15px;
+            }
+          
+            .nested-list-2 {
+              padding-left: 30px;
+            }
+          
+            .nested-list-3 {
+              padding-left: 45px;
+            }
+          
+            .nested-list-4 {
+              padding-left: 60px;
+            }
+          
+            .nested-list-5 {
+              padding-left: 75px;
+            }
+          </style> 
+
+  <!-- Modal para lista hierárquica -->
+  <div class="modal fade" id="listModal" tabindex="-1" aria-labelledby="listModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="listModalLabel">Mapeamento da Documentação</h5>
+          <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Conteúdo da lista hierárquica -->
+          <ul class="list-group">
+            {% for section in sections %}
+              <li class="list-group-item p-1">
+                <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#section-{{ section.id }}">
+                  <i class="fas fa-folder"></i> <span class="small">{{ section.title }}</span>
+                  <i class="fas fa-chevron-right float-right toggle-icon"></i>
+                </button>
+                <div id="section-{{ section.id }}" class="collapse show">
+                  <ul class="list-group nested-list-1">
+                    {% for category in section.categories.all %}
+                      <li class="list-group-item p-1">
+                        <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#category-{{ category.id }}">
+                          <i class="fas fa-tag"></i> <a href="{% url 'view_category' section.id category.id %}" class="small">{{ category.name }}</a>
+                          <i class="fas fa-chevron-right float-right toggle-icon"></i>
+                        </button>
+                        <div id="category-{{ category.id }}" class="collapse show">
+                          <ul class="list-group nested-list-2">
+                            {% for subcategory in category.subcategories.all %}
+                              <li class="list-group-item p-1">
+                                <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#subcategory-{{ subcategory.id }}">
+                                  <i class="fas fa-cogs"></i> <a href="{% url 'view_subcategory' section.id category.id subcategory.id %}" class="small">{{ subcategory.name }}</a>
+                                  <i class="fas fa-chevron-right float-right toggle-icon"></i>
+                                </button>
+                                <div id="subcategory-{{ subcategory.id }}" class="collapse show">
+                                  <ul class="list-group nested-list-3">
+                                    {% for topic in subcategory.topics.all %}
+                                      <li class="list-group-item p-1">
+                                        <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#topic-{{ topic.id }}">
+                                          <i class="fas fa-book"></i> <a href="{% url 'view_topic' section.id category.id subcategory.id topic.id %}" class="small">{{ topic.name }}</a>
+                                          <i class="fas fa-chevron-right float-right toggle-icon"></i>
+                                        </button>
+                                        <div id="topic-{{ topic.id }}" class="collapse show">
+                                          <ul class="list-group nested-list-4">
+                                            {% for subtopic in topic.subtopics.all %}
+                                              <li class="list-group-item p-1">
+                                                <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#subtopic-{{ subtopic.id }}">
+                                                  <i class="fas fa-list-ul"></i> <a href="{% url 'view_subtopic' section.id category.id subcategory.id topic.id subtopic.id %}" class="small">{{ subtopic.name }}</a>
+                                                  <i class="fas fa-chevron-right float-right toggle-icon"></i>
+                                                </button>
+                                                <div id="subtopic-{{ subtopic.id }}" class="collapse show">
+                                                  <ul class="list-group nested-list-5">
+                                                    {% for instruction in subtopic.instructions.all %}
+                                                      <li class="list-group-item p-1">
+                                                        <a href="{% url 'view_instruction' section.id category.id subcategory.id topic.id subtopic.id instruction.id %}" class="small">
+                                                          <i class="fas fa-file-alt"></i> <span class="small">{{ instruction.title }}</span>
+                                                        </a>
+                                                      </li>
+                                                    {% endfor %}
+                                                  </ul>
+                                                </div>
+                                              </li>
+                                            {% endfor %}
+                                          </ul>
+                                        </div>
+                                      </li>
+                                    {% endfor %}
+                                  </ul>
+                                </div>
+                              </li>
+                            {% endfor %}
+                          </ul>
+                        </div>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript para alternar o ícone -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll(".toggle-button").forEach(function (button) {
+        button.addEventListener("click", function () {
+          const icon = this.querySelector(".toggle-icon");
+          icon.classList.toggle("fa-chevron-right");
+          icon.classList.toggle("fa-chevron-down");
+        });
+      });
+    });
+  </script>
+
+
+        
 
           
 
-          <li class="nav-item">
+           {% comment %} <li class="nav-item">
             <a class="nav-link" 
                target="_blank" 
                href="https://appseed.us/admin-dashboards/django-dashboard-argon-pro">
               <i class="ni ni-spaceship text-red"></i>
               <span class="nav-link-text text-red">PRO Version</span>
             </a>
-          </li>
+          </li>  {% endcomment %}
 
-          <li class="nav-item">
+          {% comment %} <li class="nav-item">
             <a class="nav-link active active-pro" 
                target="_blank" 
                href="http://appseed.us">
               <i class="ni ni-send text-dark"></i>
               <span class="nav-link-text">AppSeed</span>
             </a>
-          </li>
+          </li>  {% endcomment %}
         </ul>
       </div>
     </div>

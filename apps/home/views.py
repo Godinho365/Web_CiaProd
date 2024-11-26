@@ -9,14 +9,22 @@ from django.http import HttpResponse
 from django.template import loader 
 from django.urls import reverse
 from django.shortcuts import render
+from apps.doc.models import Section
 
 
 @login_required(login_url="/login/")
 def index(request):
     context = {'segment': 'index'}
 
+    sections = Section.objects.prefetch_related( 
+        'categories__subcategories__topics__subtopics__instructions'
+    )
+
+    context['sections'] = sections  # Adicione as sections ao contexto
+
     html_template = loader.get_template('home/index.html')
     return HttpResponse(html_template.render(context, request))
+
 
 def icons(request):
     return render(request, 'home/icons.html')

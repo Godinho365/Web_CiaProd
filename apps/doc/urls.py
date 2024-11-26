@@ -54,7 +54,7 @@ urlpatterns = [
     
     path('gerar-pdf/<str:model_name>/<int:pk>/', generate_pdf, name='generate_pdf'),
 
-    path('doc-sidenav/', sidenav_view, name='doc_sidenav'),
+    path('mapeamento-documentacao/', sidenav_view, name='doc_sidenav'),
     
    
 

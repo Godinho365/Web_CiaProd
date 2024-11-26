@@ -305,16 +305,19 @@
             aria-haspopup="true"
             aria-expanded="false"
           >
+            
             <div class="media align-items-center">
               <span class="avatar avatar-sm rounded-circle">
                 <img
-                  alt="Image placeholder"
-                  src="/static/assets/img/theme/team-4.jpg"
+                  alt="Administrator"
+                  src="/static/assets/img/theme/administrador.png"
                 />
               </span>
+             
+                    
               <div class="media-body ml-2 d-none d-lg-block">
                 <span class="mb-0 text-sm font-weight-bold">
-                  {{ request.user.username }}
+                  {{ request.user.username|capfirst }}
                 </span>
               </div>
             </div>

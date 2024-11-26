@@ -7,6 +7,8 @@ Copyright (c) 2019 - present AppSeed.us
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
+
+from apps.doc.models import Section
 from .forms import LoginForm, SignUpForm, GroupForm
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
@@ -259,7 +261,13 @@ def my_profile(request):
     # Remove o campo 'group' do formulário para evitar que seja editado.
     form.fields['group'].widget.attrs['readonly'] = True  # Tornando o campo somente leitura
 
-    return render(request, 'home/profile.html', {'form': form})
+    # Obtém as seções com as categorias, subcategorias, tópicos, subtópicos e instruções
+    sections = Section.objects.prefetch_related( 
+        'categories__subcategories__topics__subtopics__instructions'
+    )
+
+    # Passa o formulário e as seções para o contexto do template
+    return render(request, 'home/profile.html', {'form': form, 'sections': sections})
 
 
 from django.contrib.auth.views import PasswordResetView

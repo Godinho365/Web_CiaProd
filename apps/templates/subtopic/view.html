@@ -168,7 +168,7 @@
 
               <!-- Botões para Restaurar e Ver Detalhes -->
               <div class="d-flex justify-content-between align-items-center mt-3">
-                <a href="{% url 'restore_topic' topic_id=topic.id version_id=version.id %}" class="btn btn-warning btn-sm">
+                <a href="{% url 'restore_subtopic' subtopic_id=subtopic.id version_id=version.id %}" class="btn btn-warning btn-sm">
                   Restaurar Versão
                 </a>
                 <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target="#versionDetails{{ version.id }}" aria-expanded="false" aria-controls="versionDetails{{ version.id }}">
