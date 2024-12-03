@@ -1,50 +1,68 @@
 <nav class="sidenav navbar navbar-vertical  fixed-left  navbar-expand-xs navbar-light bg-white" id="sidenav-main">
   <div class="scrollbar-inner">
     <!-- Brand -->
-    <div class="sidenav-header  align-items-center">
+    <div class="sidenav-header align-items-center">
       <a class="navbar-brand" href="/">
-        <img src="" class="navbar-brand-img"  >
+        <img src="/static/assets/img/brand/teste.png" alt="Logo" class="navbar-brand-im" style="max-width: 200%; max-height: 200px;">
       </a>
     </div>
-    <div class="navbar-inner">
+    
+    <div class="navbar-inner" style="margin-top: 100px; ">
       <!-- Collapse -->
       <div class="collapse navbar-collapse" id="sidenav-collapse-main">
       
         <!-- Nav items -->
 
         
+        <!-- Heading -->
+        <h6 class="navbar-heading p-0 text-muted">
+          <span class="docs-normal">Recursos de Admin</span>
+        </h6>
+
         <ul class="navbar-nav">
-          <li class="nav-item">
+          {% comment %} <li class="nav-item">
             <a class="nav-link" href="{% url 'my_profile' %}">
               <i class="ni ni-single-02 text-yellow"></i>
               <span class="nav-link-text">Profile</span>
             </a>
-          </li>
+          </li> {% endcomment %}
           <li class="nav-item">
             <a class="nav-link {% if 'index' in segment %} active {% endif %}" href="/">
               <i class="ni ni-tv-2 text-primary"></i>
               <span class="nav-link-text">Dashboard</span>
             </a>
           </li>
-          {% comment %} <li class="nav-item">
-            <a class="nav-link {% if 'icons' in segment %} active {% endif %}" href="/icons.html">
-              <i class="ni ni-planet text-orange"></i>
-              <span class="nav-link-text">Icons</span>
-            </a>
-          </li>
+          
           <li class="nav-item">
-            <a class="nav-link {% if 'map' in segment %} active {% endif %}" href="/map.html">
-              <i class="ni ni-pin-3 text-primary"></i>
-              <span class="nav-link-text">Google</span>
+            <a class="nav-link {% if request.resolver_match.url_name == 'list_users' %}active{% endif %}" href="{% url 'list_users' %}">
+              <i class="fas fa-users text-primary"></i>
+              <span class="nav-link-text">Usuários</span>
             </a>
           </li>
           
+          
           <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'list_groups' %}active{% endif %}" href="{% url 'list_groups' %}">
+              <i class="fas fa-users-cog text-success"></i>
+              <span class="nav-link-text">Grupos</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link " href="">
+                <i class="fas fa-trash-alt text-warning"></i> <!-- Ícone de lixeira -->
+                <span class="nav-link-text">Lixeira</span>
+            </a>
+        </li>
+        
+          
+          
+          {% comment %} <li class="nav-item">
             <a class="nav-link {% if 'tables' in segment %} active {% endif %}" href="/tables.html">
               <i class="ni ni-bullet-list-67 text-default"></i>
               <span class="nav-link-text">Tables</span>
             </a>
-          </li> {% endcomment %}
+          </li>  {% endcomment %}
           {% comment %} <li class="nav-item">
             <a class="nav-link" href="/login.html">
               <i class="ni ni-key-25 text-info"></i>
@@ -72,10 +90,25 @@
         <hr class="my-3">
         <!-- Heading -->
         <h6 class="navbar-heading p-0 text-muted">
-          <span class="docs-normal">Recursos</span>
+          <span class="docs-normal">Recursos de Visitante</span>
         </h6>
         <!-- Navigation -->
         <ul class="navbar-nav mb-md-3">
+
+          <li class="nav-item d-flex align-items-center">
+            <a class="nav-link" target="_blank" href="">
+              <i class="fas fa-check-circle"></i>
+                <span class="nav-link-text">Missões</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link " href="">
+                <i class="fas fa-file-pdf text-danger"></i> <!-- Ícone de PDF -->
+                <span class="nav-link-text">Materiais</span>
+            </a>
+        </li>
+        
 
           <li class="nav-item d-flex align-items-center">
             <a class="nav-link" target="_blank" href="{% url 'list_section' %}">
@@ -83,12 +116,20 @@
               <span class="nav-link-text">Documentação</span>
             </a>
             <!-- Botão com ícone para abrir o modal -->
-            <button type="button" class="btn btn-link p-0 ms-2" data-toggle="modal" data-target="#listModal" aria-label="Abrir Lista" onclick="console.log('ESTOU AQUI')">
+            <button type="button" class="btn btn-link p-0 ms-2" data-toggle="modal" data-target="#listModal" aria-label="Abrir Lista" >
               <i class="fas fa-network-wired"></i>
             </button>
           </li>
 
-
+          <li class="nav-item">
+            <a class="nav-link " href="">
+                <i class="fas fa-project-diagram text-primary"></i> <!-- Ícone de projeto -->
+                <span class="nav-link-text">Desenvolvimento</span>
+            </a>
+        </li>
+        
+          
+        
           <style>
             /* Limitar a largura do container sem perder a responsividade */
             .custom-container {

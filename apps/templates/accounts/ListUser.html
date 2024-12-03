@@ -19,7 +19,7 @@
                   <th scope="col">Username</th>
                   <th scope="col">Email</th>
                   <th scope="col">Data de Cadastro</th>
-                  <th scope="col">Grupo</th> <!-- Coluna para exibir o grupo -->
+                  <th scope="col">Grupo</th>
                   <th scope="col"></th>
                 </tr>
               </thead>
@@ -37,7 +37,7 @@
                         {{ group.name }}{% if not forloop.last %}, {% endif %}
                       {% endfor %}
                     {% endif %}
-                  </td> <!-- Exibe os grupos ou "Admin" -->
+                  </td>
                   <td class="text-right">
                     <div class="dropdown">
                       <a
@@ -52,7 +52,13 @@
                       </a>
                       <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
                         <a class="dropdown-item" href="{% url 'edit_user' user.id %}">Editar</a>
-                        <a class="dropdown-item" href="#" onclick="return confirm('Você tem certeza que deseja excluir este usuário?')">Excluir</a>
+                        <!-- Formulário para excluir o usuário -->
+                        <div class="dropdown-item p-0">
+                          <form action="{% url 'delete_user' user.id %}" method="POST" class="m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item w-100">Excluir</button>
+                          </form>
+                        </div>
                       </div>
                     </div>
                   </td>

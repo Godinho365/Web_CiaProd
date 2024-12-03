@@ -82,6 +82,12 @@ def is_superuser(user):
     return user.is_superuser
 
 
+from django.contrib import messages
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.models import Group
+from django.contrib.auth.decorators import user_passes_test
+from .forms import GroupForm
+
 @user_passes_test(lambda u: u.is_superuser)
 def create_or_edit_group(request, group_id=None):
     """
@@ -98,35 +104,67 @@ def create_or_edit_group(request, group_id=None):
         form = GroupForm(request.POST, instance=group)  # Preenche o formulário com o grupo para edição, se existir
         if form.is_valid():
             form.save()
-            return redirect('list_groups')  # Redireciona para uma página de grupos ou onde você quiser
+
+            # Adicionar mensagem de sucesso
+            if group:
+                messages.success(request, f'O grupo "{group.name}" foi atualizado com sucesso.')
+            else:
+                messages.success(request, 'O novo grupo foi criado com sucesso.')
+
+            return redirect('list_groups')  # Redireciona para a lista de grupos após salvar
+        else:
+            # Adicionar mensagem de erro se o formulário não for válido
+            messages.error(request, 'Erro ao salvar o grupo. Verifique os campos e tente novamente.')
+
     else:
         form = GroupForm(instance=group)  # Preenche o formulário com os dados do grupo se for edição, ou com dados vazios para criação
 
     return render(request, 'accounts/FormGroup.html', {'form': form, 'group': group})
 
+
+
 @user_passes_test(lambda u: u.is_superuser)
 def list_groups(request):
-    groups = Group.objects.all()  # Pega todos os grupos
+    # Obtém ou cria o grupo Admin
+    admin_group, created = Group.objects.get_or_create(name="Admin")
     
-    # Conta o total de usuários no sistema
+    # Adiciona todos os superusuários ao grupo Admin
+    superusers = User.objects.filter(is_superuser=True)
+    for superuser in superusers:
+        if superuser not in admin_group.user_set.all():
+            admin_group.user_set.add(superuser)
+
+    # Garante que todos os usuários do grupo Admin são superusuários e tem 'is_staff' como True
+    admin_users = admin_group.user_set.all()
+    for user in admin_users:
+        if not user.is_superuser:
+            user.is_superuser = True
+        if not user.is_staff:
+            user.is_staff = True
+        user.save()
+
+    # Calcula os dados para a listagem dos grupos
+    groups = Group.objects.all()
     total_users = User.objects.count()
 
-    # Lista para armazenar os dados dos grupos com a quantidade de usuários e a porcentagem
     group_data = []
     for group in groups:
-        # Conta o número de usuários associados ao grupo
         group_users_count = group.user_set.count()
-        
-        # Calcula a porcentagem de usuários no grupo em relação ao total de usuários
         group_percentage = (group_users_count / total_users * 100) if total_users > 0 else 0
         
         group_data.append({
             'group': group,
             'user_count': group_users_count,
-            'percentage': group_percentage
+            'percentage': group_percentage,
         })
     
-    return render(request, 'accounts/ListGroup.html', {'group_data': group_data, 'total_users': total_users})
+    return render(request, 'accounts/ListGroup.html', {
+        'group_data': group_data,
+        'total_users': total_users,
+    })
+
+from django.contrib import messages
+
 
 @user_passes_test(lambda u: u.is_superuser)
 def delete_group(request, group_id):
@@ -134,6 +172,9 @@ def delete_group(request, group_id):
     
     # Excluir o grupo
     group.delete()
+    
+    # Adicionar uma mensagem de sucesso
+    messages.success(request, f'O grupo "{group.name}" foi excluído com sucesso.')
     
     # Redirecionar para a lista de grupos após a exclusão
     return redirect('list_groups')
@@ -165,8 +206,11 @@ def delete_user(request, user_id):
         messages.success(request, 'Usuário excluído com sucesso!')
         return redirect('list_users')  # Redireciona para a lista de usuários após a exclusão
 
-    return render(request, '', {'user': user})
+    # Se o método não for POST, redireciona para a lista de usuários
+    return redirect('list_users')
 
+
+from django.core.exceptions import ValidationError
 
 def create_or_edit_user(request, user_id=None):
     # Verificando se o usuário é um superusuário
@@ -182,7 +226,14 @@ def create_or_edit_user(request, user_id=None):
 
     if request.method == 'POST':
         form = UserForm(request.POST, instance=user)
+        
         if form.is_valid():
+            # Verificando se o email já está cadastrado, mas não o do próprio usuário
+            email = form.cleaned_data['email']
+            if User.objects.filter(email=email).exclude(id=user_id).exists():
+                form.add_error('email', 'Este e-mail já está cadastrado.')
+                return render(request, 'accounts/FormUser.html', {'form': form, 'user': user})
+
             user = form.save(commit=False)  # Não salva imediatamente para podermos manipular antes
             
             # Atualiza o grupo selecionado
@@ -200,6 +251,7 @@ def create_or_edit_user(request, user_id=None):
         form = UserForm(instance=user)
 
     return render(request, 'accounts/FormUser.html', {'form': form, 'user': user})
+
 
 from django.db.models import Count
 from django.db.models.functions import TruncDate

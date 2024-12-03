@@ -510,6 +510,10 @@ def view_subcategory(request, section_id, category_id, subcategory_id):
 
     is_contributor = request.user.groups.filter(name='Contribuidor').exists()
 
+    # Navegação de subcategorias: encontrando a subcategoria anterior e próxima
+    previous_subcategory = Subcategory.objects.filter(category=category, order__lt=subcategory.order).order_by('-order').first()
+    next_subcategory = Subcategory.objects.filter(category=category, order__gt=subcategory.order).order_by('order').first()
+
     # Preparando o contexto para o template
     context = {
         'subcategory': subcategory,  # Adicionando a subcategoria ao contexto
@@ -520,10 +524,13 @@ def view_subcategory(request, section_id, category_id, subcategory_id):
         'start_date': start_date if start_date else '',
         'end_date': end_date if end_date else '',
         'is_contributor': is_contributor,
+        'previous_subcategory': previous_subcategory,
+        'next_subcategory': next_subcategory,
     }
 
     # Renderizando o template com o contexto
     return render(request, 'subcategory/view.html', context)
+
 
 @login_required
 def list_instruction(request, section_id, category_id, subcategory_id, topic_id, subtopic_id):
@@ -1423,4 +1430,5 @@ def sidenav_view(request):
         'categories__subcategories__topics__subtopics__instructions'
     )
     return {'sections': sections}
+
 
