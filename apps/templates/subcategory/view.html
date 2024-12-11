@@ -1,4 +1,5 @@
-{% extends "layouts/base.html" %} {% block content %}
+{% extends "layouts/base.html" %}  {% block content %}
+
 
 
 <div class="container-fluid">
@@ -8,7 +9,7 @@
         <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
           <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
             <li class="breadcrumb-item">
-              <a href="{% url 'list_section' %}"><i class="fas fa-home"></i></a>
+              <a href="{% url 'list_section' %}"><small><i class="fas fa-home"></small></i></a>
             </li>
             <li class="breadcrumb-item">
               <a href="{% url 'list_category' section.id %}"
@@ -73,25 +74,62 @@
       >
         <h1>{{ subcategory.name }}</h1>
         <p>{{ subcategory.content|safe }}</p>
+        <hr style="border: 1px solid #ddd; margin-bottom: 15px;">
+        <p>
+          <strong>Escrito por:</strong> 
+          {% if subcategory.author %}
+              {{ subcategory.author.get_full_name|default:subcategory.author.username }}
+          {% else %}
+              Autor não informado
+          {% endif %}
+      </p>
+      
+        <p><strong>Data de criação:</strong> {{ subcategory.created_at|date:"d/m/Y H:i" }}</p>
+
+        <hr style="border: 1px solid #ddd; margin-bottom: 15px;">
       </div>
 
+      
+      
+
       <!-- Navegação para Subcategorias -->
-      <div class="mt-4 d-flex justify-content-between">
-        {% if previous_subcategory %}
-        <a
-          href="{% url 'view_subcategory' section.id category.id previous_subcategory.id %}"
-          class="btn btn-primary"
-          >Anterior</a
-        >
-        {% endif %} {% if next_subcategory %}
-        <a
-          href="{% url 'view_subcategory' section.id category.id next_subcategory.id %}"
-          class="btn btn-primary"
-          >Próxima</a
-        >
-        {% endif %}
-      </div>
+<div class="mt-4 d-flex justify-content-between align-items-center">
+  {% if previous_subcategory %}
+  <a
+    href="{% url 'view_subcategory' section.id category.id previous_subcategory.id %}"
+    class="btn btn-primary"
+  >
+    <span>Anterior</span>
+    <br>
+    <small>{{ previous_subcategory.name }}</small>
+  </a>
+  {% endif %}
+
+  <!-- Botão de Sair no meio -->
+  <a href="{% url 'list_subcategory' section.id category.id %}" class="btn btn-secondary">
+    Sair
+  </a>
+
+  {% if next_subcategory %}
+  <a
+    href="{% url 'view_subcategory' section.id category.id next_subcategory.id %}"
+    class="btn btn-primary text-end"
+  >
+    <span>Próxima</span>
+    <br>
+    <small>{{ next_subcategory.name }}</small>
+  </a>
+  {% endif %}
+</div>
+
+
+
+
+
+      {% include "includes/footer.html" %}
     </div>
+
+    
 
    
 
@@ -334,4 +372,10 @@
     });
   });
 </script>
+
+
+
+
 {% endblock %}
+
+

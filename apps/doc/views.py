@@ -37,7 +37,7 @@ def list_section(request):
         sections = sections.filter(title__icontains=search_query)
     
     # Adiciona a paginação
-    paginator = Paginator(sections, 3)  # 3 seções por página
+    paginator = Paginator(sections, 4)  # 3 seções por página
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -155,18 +155,23 @@ def list_category(request, section_id):
         categories = categories.filter(name__icontains=search_query)  # Filtra pelo nome da categoria
     
     # Adiciona a paginação
-    paginator = Paginator(categories, 3)  # 3 categorias por página
+    paginator = Paginator(categories, 4)  # 3 categorias por página
     page_number = request.GET.get('page')  # Obtém o número da página da URL
     page_obj = paginator.get_page(page_number)  # Obtém as categorias para a página atual
 
     # Verifica se o usuário é superusuário ou pertence ao grupo "Contribuidor"
     is_contributor = request.user.groups.filter(name='Contribuidor').exists()
 
+    # Obter os IDs ativos automaticamente
+    active_ids = get_active_ids_from_path(request.path)
+
     return render(request, 'category/list.html', {
         'categories': page_obj,  # Passa o objeto paginado para o template
         'section': section,  # Adiciona a seção ao contexto
         'search_query': search_query,  # Passa a consulta de busca para o template
         'is_contributor': is_contributor,
+        'active_ids': active_ids
+        
     })
 
 @login_required
@@ -201,6 +206,9 @@ def update_category(request, section_id, id):
     # Obtenha a categoria associada ao id e à seção
     category = get_object_or_404(Category, id=id, section=section)
 
+    # Obter os IDs ativos automaticamente
+    active_ids = get_active_ids_from_path(request.path)
+
     if request.method == 'POST':
         form = CategoryForm(request.POST, request.FILES, instance=category)
         if form.is_valid():
@@ -227,6 +235,7 @@ def update_category(request, section_id, id):
             'form': form,
             'category': category,
             'section': section,
+            'active_ids': active_ids
         }
     )
 
@@ -312,28 +321,27 @@ def view_category(request, section_id, category_id):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number) 
     
-    sections = Section.objects.prefetch_related( 
-        'categories__subcategories__topics__subtopics__instructions'
-    )
+    # Navegação de categorias: encontrando a categoria anterior e próxima
+    previous_category = Category.objects.filter(section=section, order__lt=category.order).order_by('-order').first()
+    next_category = Category.objects.filter(section=section, order__gt=category.order).order_by('order').first()
 
-    # Verificando se o usuário é um contribuídor
-    is_contributor = request.user.groups.filter(name='Contribuidor').exists()
+    # Obter os IDs ativos automaticamente
+    active_ids = get_active_ids_from_path(request.path)
 
-    
     # Preparando o contexto para o template
     context = {
         'category': category,  # Adicionando a categoria ao contexto
         'section': section,  # Adicionando a seção ao contexto
         'content': category.content,  # Presumindo que haja um campo 'content' no modelo Category
         'page_obj': page_obj,  # Passa o objeto de página com as versões paginadas
-        'is_contributor': is_contributor,
-        'sections': sections,
-        
-        
+        'previous_category': previous_category,  # Adicionando categoria anterior ao contexto
+        'next_category': next_category,  # Adicionando categoria próxima ao contexto
+        'active_ids': active_ids,  # Adicionando IDs ativos ao contexto
     }
 
     # Renderizando o template com o contexto
     return render(request, 'category/view.html', context)
+
 
 
 @login_required
@@ -355,11 +363,14 @@ def list_subcategory(request, section_id, category_id):
         subcategories_list = subcategories_list.filter(name__icontains=search_query)  # Filtra pelo nome da subcategoria
     
     # Paginação
-    paginator = Paginator(subcategories_list, 3)  # Mostra 3 subcategorias por página
+    paginator = Paginator(subcategories_list, 4)  # Mostra 3 subcategorias por página
     page_number = request.GET.get('page')
     subcategories = paginator.get_page(page_number)
 
     is_contributor = request.user.groups.filter(name='Contribuidor').exists()
+
+    # IDs ativos com base na URL
+    active_ids = get_active_ids_from_path(request.path)
 
 
     return render(request, 'subcategory/list.html', {
@@ -368,6 +379,7 @@ def list_subcategory(request, section_id, category_id):
         'section': section,    # Adiciona a seção ao contexto (opcional, se precisar)
         'search_query': search_query,  # Passa a consulta de busca para o template
         'is_contributor': is_contributor,
+        'active_ids': active_ids,  # Adicionando IDs ativos ao contexto
     })
 
 @login_required
@@ -432,11 +444,14 @@ def update_subcategory(request, id):
         # Passa a categoria e a seção para o formulário
         form = SubcategoryForm(instance=subcategory, category=category, section=section)
 
+        
+
     return render(request, 'subcategory/form.html', {
         'form': form,
         'subcategory': subcategory,
         'category': category,  # Passa a categoria para o template
         'section': section     # Passa a seção para o template
+        
     })
 
 @login_required
@@ -510,6 +525,9 @@ def view_subcategory(request, section_id, category_id, subcategory_id):
 
     is_contributor = request.user.groups.filter(name='Contribuidor').exists()
 
+    # IDs ativos com base na URL
+    active_ids = get_active_ids_from_path(request.path)
+
     # Navegação de subcategorias: encontrando a subcategoria anterior e próxima
     previous_subcategory = Subcategory.objects.filter(category=category, order__lt=subcategory.order).order_by('-order').first()
     next_subcategory = Subcategory.objects.filter(category=category, order__gt=subcategory.order).order_by('order').first()
@@ -526,6 +544,7 @@ def view_subcategory(request, section_id, category_id, subcategory_id):
         'is_contributor': is_contributor,
         'previous_subcategory': previous_subcategory,
         'next_subcategory': next_subcategory,
+        'active_ids': active_ids,
     }
 
     # Renderizando o template com o contexto
@@ -566,6 +585,9 @@ def list_instruction(request, section_id, category_id, subcategory_id, topic_id,
 
     is_contributor = request.user.groups.filter(name='Contribuidor').exists()
 
+    # IDs ativos com base na URL
+    active_ids = get_active_ids_from_path(request.path)
+
     return render(request, 'instruction/list.html', {
         'section': section,
         'category': category,
@@ -576,7 +598,9 @@ def list_instruction(request, section_id, category_id, subcategory_id, topic_id,
         'subfase_filter': subfase_filter,
         'subfases': subfases,  # Passa as subfases únicas para o template
         'search_query': search_query,  # Passa a consulta de busca para o template
-        'is_contributor': is_contributor
+        'is_contributor': is_contributor,
+        'active_ids': active_ids
+
     })
 
 
@@ -762,6 +786,14 @@ def view_instruction(request, section_id, category_id, subcategory_id, topic_id,
 
     is_contributor = request.user.groups.filter(name='Contribuidor').exists()
 
+    # IDs ativos com base na URL
+    active_ids = get_active_ids_from_path(request.path)
+
+    # Calculando a instruction anterior e próxima
+    previous_instruction = Instruction.objects.filter(topic=topic, order__lt=instruction.order).order_by('-order').first()
+    next_instruction = Instruction.objects.filter(topic=topic, order__gt=instruction.order).order_by('order').first()
+
+
     # Renderiza o template com os dados da instrução, tópico, subtópico e outros dados necessários
     return render(request, 'instruction/view.html', {
         'instruction': instruction,
@@ -774,7 +806,168 @@ def view_instruction(request, section_id, category_id, subcategory_id, topic_id,
         'start_date': start_date if start_date else '',  # Para preencher o campo de data inicial no template
         'end_date': end_date if end_date else '',        # Para preencher o campo de data final no template
         'is_contributor': is_contributor,
+        'active_ids': active_ids,
+        'previous_instruction': previous_instruction,
+        'next_instruction': next_instruction,
+
     })
+
+@login_required
+def order_category(request, section_id):
+    # Obtém a seção com base no ID
+    section = get_object_or_404(Section, id=section_id)
+
+    # Filtra as categorias da seção
+    categories = Category.objects.filter(section=section).order_by('order')
+
+    if request.method == 'POST':
+        # Obtém os IDs das categorias na nova ordem
+        category_ids = request.POST.get('category_ids', '').split(',')
+        
+        # Filtra IDs vazios e não numéricos
+        category_ids = [id.strip() for id in category_ids if id.strip().isdigit()]
+
+        if category_ids:
+            # Atualiza a ordem das categorias conforme os IDs fornecidos
+            for i, category_id in enumerate(category_ids):
+                try:
+                    # Recupera a categoria e atualiza sua ordem
+                    category = Category.objects.get(id=category_id)
+                    category.order = i + 1  # Define a nova ordem
+                    category.save()  # Salva a alteração
+                except Category.DoesNotExist:
+                    continue  # Ignora categorias não encontradas
+
+            # Mensagem de sucesso
+            messages.success(request, "A ordem das categorias foi atualizada com sucesso.")
+        else:
+            messages.error(request, "Nenhuma categoria foi selecionada para atualizar.")
+
+        # Redireciona de volta para a lista de categorias
+        return redirect('list_category', section_id=section_id)
+
+    # Renderiza a página com as categorias a serem ordenadas
+    return render(request, 'category/order.html', {
+        'categories': categories,
+        'section': section
+    })
+
+def order_subcategory(request, section_id, category_id):
+    # Filtra as subcategorias pela categoria com base no category_id
+    subcategories = Subcategory.objects.filter(category_id=category_id).order_by('order')
+
+    if request.method == 'POST':
+        # Obtém os IDs das subcategorias na nova ordem
+        subcategory_ids = request.POST.get('subcategory_ids', '').split(',')
+        
+        # Filtra IDs vazios e não numéricos
+        subcategory_ids = [id.strip() for id in subcategory_ids if id.strip().isdigit()]
+
+        if subcategory_ids:
+            # Atualiza a ordem das subcategorias conforme os IDs fornecidos
+            for i, subcategory_id in enumerate(subcategory_ids):
+                try:
+                    # Recupera a subcategoria e atualiza sua ordem
+                    subcategory = Subcategory.objects.get(id=subcategory_id)
+                    subcategory.order = i + 1  # Define a nova ordem
+                    subcategory.save()  # Salva a alteração
+                except Subcategory.DoesNotExist:
+                    continue  # Ignora subcategorias não encontradas
+
+            # Mensagem de sucesso
+            messages.success(request, "A ordem das subcategorias foi atualizada com sucesso.")
+        else:
+            messages.error(request, "Nenhuma subcategoria foi selecionada para atualizar.")
+
+        # Redireciona de volta para a lista de subcategorias
+        return redirect('list_subcategory', section_id=section_id, category_id=category_id)
+
+    # Renderiza a página com as subcategorias a serem ordenadas
+    return render(request, 'subcategory/order.html', {
+        'subcategories': subcategories,
+        'section_id': section_id,
+        'category_id': category_id
+    })
+
+def order_topic(request, section_id, category_id, subcategory_id):
+    # Filtra os tópicos pela subcategoria com base no subcategory_id
+    topics = Topic.objects.filter(subcategory_id=subcategory_id).order_by('order')
+
+    if request.method == 'POST':
+        # Obtém os IDs dos tópicos na nova ordem
+        topic_ids = request.POST.get('topic_ids', '').split(',')
+        
+        # Filtra IDs vazios e não numéricos
+        topic_ids = [id.strip() for id in topic_ids if id.strip().isdigit()]
+
+        if topic_ids:
+            # Atualiza a ordem dos tópicos conforme os IDs fornecidos
+            for i, topic_id in enumerate(topic_ids):
+                try:
+                    # Recupera o tópico e atualiza sua ordem
+                    topic = Topic.objects.get(id=topic_id)
+                    topic.order = i + 1  # Define a nova ordem
+                    topic.save()  # Salva a alteração
+                except Topic.DoesNotExist:
+                    continue  # Ignora tópicos não encontrados
+
+            # Mensagem de sucesso
+            messages.success(request, "A ordem dos tópicos foi atualizada com sucesso.")
+        else:
+            messages.error(request, "Nenhum tópico foi selecionado para atualizar.")
+
+        # Redireciona de volta para a lista de tópicos
+        return redirect('list_topic', section_id=section_id, category_id=category_id, subcategory_id=subcategory_id)
+
+    # Renderiza a página com os tópicos a serem ordenados
+    return render(request, 'topic/order.html', {
+        'topics': topics,
+        'section_id': section_id,
+        'category_id': category_id,
+        'subcategory_id': subcategory_id
+    })
+
+@login_required
+def order_subtopic(request, section_id, category_id, subcategory_id, topic_id):
+    # Filtra os sub-tópicos com base no topic_id, e ajusta a consulta conforme as relações reais
+    subtopics = Subtopic.objects.filter(
+        topic_id=topic_id  # Usando a chave estrangeira do tópico
+    ).order_by('order')
+
+    # Resto da lógica para processar o formulário
+    if request.method == 'POST':
+        # Captura os IDs dos sub-tópicos na nova ordem
+        subtopic_ids = request.POST.get('subtopic_ids', '').split(',')
+        
+        # Filtra IDs vazios
+        subtopic_ids = [id for id in subtopic_ids if id.strip()]
+
+        if subtopic_ids:
+            for i, subtopic_id in enumerate(subtopic_ids):
+                try:
+                    subtopic = Subtopic.objects.get(id=subtopic_id)
+                    subtopic.order = i + 1
+                    subtopic.save()
+                except Subtopic.DoesNotExist:
+                    continue
+            
+            messages.success(request, "A ordem dos sub-tópicos foi atualizada com sucesso.")
+        else:
+            messages.error(request, "Nenhum sub-tópico foi selecionado para atualizar.")
+
+        # Redireciona para a lista de sub-tópicos
+        return redirect('list_subtopic', section_id=section_id, category_id=category_id, 
+                        subcategory_id=subcategory_id, topic_id=topic_id)
+
+    return render(request, 'subtopic/order.html', {
+        'subtopics': subtopics,
+        'section_id': section_id,
+        'category_id': category_id,
+        'subcategory_id': subcategory_id,
+        'topic_id': topic_id
+    })
+
+
 
 @login_required
 def order_instructions(request, section_id, category_id, subcategory_id, topic_id=None, subtopic_id=None):
@@ -835,12 +1028,19 @@ def list_topic(request, section_id, category_id, subcategory_id):
     if search_query:
         topics = topics.filter(name__icontains=search_query)
 
+    # Verifique os tópicos e IDs
+    for topic in topics:
+        print(f"Topic ID: {topic.id}, Name: {topic.name}")
+
     # Adiciona paginação
-    paginator = Paginator(topics, 3)  # 3 tópicos por página
+    paginator = Paginator(topics, 4)  # 3 tópicos por página
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     is_contributor = request.user.groups.filter(name='Contribuidor').exists()
+
+    # IDs ativos com base na URL
+    active_ids = get_active_ids_from_path(request.path)
 
     return render(request, 'topic/list.html', {
         'section': section,
@@ -849,7 +1049,9 @@ def list_topic(request, section_id, category_id, subcategory_id):
         'topics': page_obj,
         'search_query': search_query,
         'is_contributor': is_contributor,
+        'active_ids': active_ids
     })
+
 
 
 @login_required
@@ -1001,6 +1203,13 @@ def view_topic(request, section_id, category_id, subcategory_id, topic_id):
     # Verifica se o usuário é contribuidor
     is_contributor = request.user.groups.filter(name='Contribuidor').exists()
 
+    # IDs ativos com base na URL
+    active_ids = get_active_ids_from_path(request.path)
+
+     # Calculando o tópico anterior e próximo
+    previous_topic = Topic.objects.filter(subcategory=subcategory, order__lt=topic.order).order_by('-order').first()
+    next_topic = Topic.objects.filter(subcategory=subcategory, order__gt=topic.order).order_by('order').first()
+
     # Preparando o contexto para o template
     context = {
         'topic': topic,  # Adicionando o tópico ao contexto
@@ -1012,6 +1221,9 @@ def view_topic(request, section_id, category_id, subcategory_id, topic_id):
         'start_date': start_date if start_date else '',
         'end_date': end_date if end_date else '',
         'is_contributor': is_contributor,  # Verifica se o usuário é contribuidor
+        'active_ids': active_ids,  # IDs ativos com base na URL
+        'previous_topic': previous_topic,  # Tópico anterior
+        'next_topic': next_topic,  # Tópico seguinte
     }
 
     # Renderizando o template com o contexto
@@ -1140,11 +1352,14 @@ def list_subtopic(request, section_id, category_id, subcategory_id, topic_id):
         subtopics = subtopics.filter(name__icontains=search_query)
 
     # Paginando os subtópicos
-    paginator = Paginator(subtopics, 3)
+    paginator = Paginator(subtopics, 4)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     is_contributor = request.user.groups.filter(name='Contribuidor').exists()
+
+    # IDs ativos com base na URL
+    active_ids = get_active_ids_from_path(request.path)
 
     # Obtendo as versões válidas do subtópico
     subtopic_versions = []
@@ -1165,7 +1380,9 @@ def list_subtopic(request, section_id, category_id, subcategory_id, topic_id):
         'subcategory_id': subcategory_id,
         'search_query': search_query,
         'subtopic_versions': subtopic_versions,  # Passa as versões para o template
-        'is_contributor': is_contributor
+        'is_contributor': is_contributor,
+        'active_ids': active_ids,  # IDs ativos com base na URL
+
     })
 
 @login_required
@@ -1212,6 +1429,14 @@ def view_subtopic(request, section_id, category_id, subcategory_id, topic_id, su
     page_obj = paginator.get_page(page_number)
 
     is_contributor = request.user.groups.filter(name='Contribuidor').exists()
+
+    # Calculando o subtopic anterior e próximo
+    previous_subtopic = Subtopic.objects.filter(topic=topic, order__lt=subtopic.order).order_by('-order').first()
+    next_subtopic = Subtopic.objects.filter(topic=topic, order__gt=subtopic.order).order_by('order').first()
+
+
+    # IDs ativos com base na URL
+    active_ids = get_active_ids_from_path(request.path)
     # Renderiza o template com as variáveis necessárias
     return render(request, 'subtopic/view.html', {
         'section': section,
@@ -1223,6 +1448,9 @@ def view_subtopic(request, section_id, category_id, subcategory_id, topic_id, su
         'start_date': start_date if start_date else '',  # Para preencher o campo de data inicial no template
         'end_date': end_date if end_date else '',  # Para preencher o campo de data final no template
         'is_contributor': is_contributor,
+        'active_ids': active_ids,
+        'previous_subtopic': previous_subtopic,
+        'next_subtopic': next_subtopic,
     })
 
 
@@ -1430,5 +1658,34 @@ def sidenav_view(request):
         'categories__subcategories__topics__subtopics__instructions'
     )
     return {'sections': sections}
+
+from django.urls import resolve
+
+def get_active_ids_from_path(path):
+    """
+    Retorna os IDs de seção, categoria, subcategoria, tópico, subtópico e instrução ativos com base na URL.
+    """
+    active_ids = {
+        'section_id': None,
+        'category_id': None,
+        'subcategory_id': None,
+        'topic_id': None,
+        'subtopic_id': None,
+        'instruction_id': None,
+    }
+
+    # Resolve o caminho para encontrar o nome da URL e os parâmetros
+    match = resolve(path)
+    kwargs = match.kwargs
+
+    # Preenche os IDs ativos (se existirem)
+    active_ids['section_id'] = kwargs.get('section_id')
+    active_ids['category_id'] = kwargs.get('category_id')
+    active_ids['subcategory_id'] = kwargs.get('subcategory_id')
+    active_ids['topic_id'] = kwargs.get('topic_id')
+    active_ids['subtopic_id'] = kwargs.get('subtopic_id')
+    active_ids['instruction_id'] = kwargs.get('instruction_id')
+
+    return active_ids
 
 

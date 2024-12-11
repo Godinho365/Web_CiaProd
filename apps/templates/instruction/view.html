@@ -1,202 +1,322 @@
 {% extends "layouts/base.html" %}
-
 {% block content %}
+
 <div class="container-fluid">
-    <div class="header-body">
-        <div class="row align-items-center py-4">
-            <div class="col-lg-12 col-12">
-                <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-                    <ol class="breadcrumb breadcrumb-links breadcrumb-dark d-flex m-0">
-                        <li class="breadcrumb-item">
-                            <a href="{% url 'list_section' %}"><i class="fas fa-home"></i></a>
-                        </li>
-                        <li class="breadcrumb-item">
-                            <a href="{% url 'list_category' section_id=section.id %}">{{ section.title }}</a>
-                        </li>
-                        <li class="breadcrumb-item">
-                            {% if category %}
-                                <a href="{% url 'list_subcategory' section_id=section.id category_id=category.id %}">{{ category.name }}</a>
-                            {% else %}
-                                <span>Categorias</span>
-                            {% endif %}
-                        </li>
-                        <li class="breadcrumb-item">
-                            {% if subcategory %}
-                                <a href="{% url 'list_topic' section_id=section.id category_id=category.id subcategory_id=subcategory.id %}">{{ subcategory.name }}</a>
-                            {% else %}
-                                <span>Subcategorias</span>
-                            {% endif %}
-                        </li>
-                        <li class="breadcrumb-item">
-                            {% if topic %}
-                                <a href="{% url 'list_subtopic' section_id=section.id category_id=category.id subcategory_id=subcategory.id topic_id=topic.id %}">{{ topic.name }}</a>
-                            {% else %}
-                                <span>Tópicos</span>
-                            {% endif %}
-                        </li>
-                        <li class="breadcrumb-item active">
-                            <a href="{% url 'list_instruction' section_id=instruction.subcategory.category.section.id category_id=instruction.subcategory.category.id subcategory_id=instruction.subcategory.id topic_id=topic.id subtopic_id=subtopic.id %}">{{ subtopic.name }}</a>
-                        </li>
-                        <li class="breadcrumb-item active" aria-current="page">{{ instruction.title }}</li>
-                    </ol>
-                </nav>
-            </div>
+  <div class="header-body">
+    <div class="row align-items-center py-4">
+      <div class="col-12">
+        <nav aria-label="breadcrumb" class="d-inline-flex">
+          <ol class="breadcrumb breadcrumb-links breadcrumb-dark d-flex flex-wrap">
+            <li class="breadcrumb-item">
+              <a href="{% url 'list_section' %}"><small><i class="fas fa-home"></i></small></a>
+            </li>
+            <li class="breadcrumb-item">
+              <a href="{% url 'list_category' section.id %}"><small>{{ section.title }}</small></a>
+            </li>
+            <li class="breadcrumb-item">
+              {% if category %}
+              <a href="{% url 'list_subcategory' section.id category.id %}"><small>{{ category.name }}</small></a>
+              {% else %}
+              <span>Categorias</span>
+              {% endif %}
+            </li>
+            <li class="breadcrumb-item">
+              {% if subcategory %}
+              <a href="{% url 'list_topic' section_id=section.id category_id=category.id subcategory_id=subcategory.id %}"><small>{{ subcategory.name }}</small></a>
+              {% else %}
+              <span>Subcategorias</span>
+              {% endif %}
+            </li>
+            <li class="breadcrumb-item">
+              {% if topic %}
+              <a href="{% url 'list_subtopic' section_id=section.id category_id=category.id subcategory_id=subcategory.id topic_id=topic.id %}"><small>{{ topic.name }}</small></a>
+              {% else %}
+              <span>Tópicos</span>
+              {% endif %}
+            </li>
+            <li class="breadcrumb-item active"><small>{{ instruction.title }}</small></li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container mt--4">
+  <div class="row">
+    <!-- Coluna da direita (Conteúdo principal) -->
+    <div class="col-md-10">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="btn-group ml-auto">
+          <a href="{% url 'generate_pdf' 'Instruction' instruction.id %}" class="btn btn-primary btn-sm" target="_blank">
+            <i class="fas fa-file-pdf"></i> Download
+          </a>
+          {% if user.is_superuser or is_contributor %}
+          <a href="{% url 'update_instruction' section_id=subcategory.category.section.id category_id=subcategory.category.id subcategory_id=subcategory.id topic_id=topic.id subtopic_id=subtopic.id id=instruction.id %}" class="btn btn-warning btn-sm">
+            <i class="fas fa-edit"></i> Editar
+          </a>
+          <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#versionHistoryModal">
+            <i class="fas fa-history"></i> Versões
+          </button>
+          {% endif %}
         </div>
+      </div>
+
+      <div class="content-body" style="border-left: 1px solid #ddd; padding-left: 15px">
+        <h1>{{ instruction.title }}</h1>
+        <p>{{ instruction.content|safe }}</p>
+        <hr style="border: 1px solid #ddd; margin-bottom: 15px;">
+        <p><strong>Escrito por:</strong> 
+          {% if instruction.author %}
+              {{ instruction.author.get_full_name|default:instruction.author.username }}
+          {% else %}
+              Autor não informado
+          {% endif %}
+        </p>
+        <p><strong>Data de criação:</strong> {{ instruction.created_at|date:"d/m/Y H:i" }}</p>
+        <hr style="border: 1px solid #ddd; margin-bottom: 15px;">
+      </div>
+
+      <!-- Navegação para Instruções -->
+      <div class="mt-4 d-flex justify-content-between align-items-center">
+        {% if previous_instruction %}
+        <a href="{% url 'view_instruction' section.id category.id subcategory.id topic.id subtopic.id previous_instruction.id %}" class="btn btn-primary">
+          <span>Anterior</span>
+          <br>
+          <small>{{ previous_instruction.title }}</small>
+        </a>
+        {% endif %}
+
+        <a href="{% url 'list_instruction' section_id=instruction.subcategory.category.section.id category_id=instruction.subcategory.category.id subcategory_id=instruction.subcategory.id topic_id=topic.id subtopic_id=subtopic.id %}" class="btn btn-secondary">
+          Sair
+        </a>
+
+        {% if next_instruction %}
+        <a href="{% url 'view_instruction' section.id category.id subcategory.id topic.id subtopic.id next_instruction.id %}" class="btn btn-primary text-end">
+          <span>Próximo</span>
+          <br>
+          <small>{{ next_instruction.title }}</small>
+        </a>
+        {% endif %}
+      </div>
+
+      {% include "includes/footer.html" %}
     </div>
 
-    <!-- Características da Instrução -->
-    <div class="container mt-4">
-        <div class="row">
-            <div class="col-md-12">
-                <div class="card mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title text-center w-100 mb-0">{{ instruction.title }}</h5>
-                        <a href="{% url 'generate_pdf' 'Instruction' instruction.id %}" class="btn btn-primary btn-sm ml-2" target="_blank">
-                            <i class="fas fa-file-pdf"></i> Download
-                        </a>
-                        {% if user.is_superuser or is_contributor %}
-                        <a href="{% url 'update_instruction' section_id=subcategory.category.section.id category_id=subcategory.category.id subcategory_id=subcategory.id topic_id=topic.id subtopic_id=subtopic.id id=instruction.id %}" class="btn btn-warning btn-sm ml-2">
-                            <i class="fas fa-edit"></i> Editar
-                        </a>
-                        <button type="button" class="btn btn-info btn-sm ml-2" data-toggle="modal" data-target="#versionHistoryModal">
-                            <i class="fas fa-history"></i> Versões
-                        </button>
-                        {% endif %}
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <div class="card text-center mb-3">
-                                    <div class="card-body">
-                                        <h6 class="card-title"><strong>Autor:</strong></h6>
-                                        <p class="card-text">{{ instruction.author.username }}</p>
-                                    </div>
-                                </div>
-                                <div class="card text-center mb-3">
-                                    <div class="card-body">
-                                        <h6 class="card-title"><strong>Data de Criação:</strong></h6>
-                                        <p class="card-text">{{ instruction.created_at|date:"d/m/Y H:i" }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <div class="card text-center">
-                                    <div class="card-body">
-                                        <h6 class="card-title"><strong>Contagem de Visualizações:</strong></h6>
-                                        <p class="card-text">{{ instruction.view_count }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Exibe o conteúdo da Instrução -->
-                        <div class="row mt-4">
-                            <div class="col-md-12">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h6 class="card-title"><strong>Conteúdo:</strong></h6>
-                                        <p class="card-text">{{ instruction.content|safe }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Botão de Voltar -->
-                        <div class="row mt-4">
-                            <div class="col-md-12 text-left">
-                                <a href="{% url 'list_instruction' section_id=section.id category_id=category.id subcategory_id=subcategory.id topic_id=topic.id subtopic_id=subtopic.id %}" class="btn btn-secondary">
-                                    <i class="fas fa-arrow-left"></i> Voltar
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Coluna da esquerda (Índice) -->
+    <div class="col-md-2" style="position: sticky; top: 0; height: 100vh; overflow-y: auto">
+      <div class="table-of-contents__left-border" style="padding: 1rem">
+        <ul id="toc" style="list-style: none; padding-left: 0; margin: 0; font-size: 0.7rem; line-height: 1.4; background: none;">
+          <!-- Índice será preenchido dinamicamente -->
+        </ul>
+      </div>
     </div>
+  </div>
 </div>
 
 <!-- Modal do Histórico de Versões -->
 <div class="modal fade" id="versionHistoryModal" tabindex="-1" role="dialog" aria-labelledby="versionHistoryModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="versionHistoryModalLabel">Histórico de Versões</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-danger">
-                    <p><strong>Atenção:</strong> Após o uso de filtros ou paginação, você precisará clicar novamente em <strong>Versões</strong> para visualizar o histórico filtrado.</p>
-                </div>
-
-                <!-- Formulário de Filtro -->
-                <form id="versionFilterForm" method="get" class="mb-4">
-                    <div class="row">
-                        <div class="col-md-5">
-                            <label for="start_date">Data Inicial</label>
-                            <input type="date" id="start_date" name="start_date" class="form-control" value="{{ request.GET.start_date }}">
-                        </div>
-                        <div class="col-md-5">
-                            <label for="end_date">Data Final</label>
-                            <input type="date" id="end_date" name="end_date" class="form-control" value="{{ request.GET.end_date }}">
-                        </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="fas fa-filter"></i> Filtrar
-                            </button>
-                        </div>
-                    </div>
-                </form>
-
-                <!-- Listagem de Versões -->
-                {% if page_obj %}
-                <div class="list-group" id="versionList">
-                    {% for version in page_obj %}
-                    <div class="list-group-item">
-                        <h6><strong>Data de Modificação:</strong> {{ version.revision.date_created|date:"d/m/Y H:i" }}</h6>
-                        <p><strong>Modificado por:</strong> {{ version.revision.user }}</p>
-                        <p><strong>Comentário:</strong> {{ version.revision.comment|default:"Sem comentário" }}</p>
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <a href="{% url 'restore_instruction' instruction_id=instruction.id version_id=version.id %}" class="btn btn-warning btn-sm">Restaurar Versão</a>
-                            <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target="#versionDetails{{ version.id }}" aria-expanded="false" aria-controls="versionDetails{{ version.id }}">Ver Alterações</button>
-                        </div>
-                        <div class="collapse mt-3" id="versionDetails{{ version.id }}">
-                            <div class="card card-body">
-                                <h6>Alterações:</h6>
-                                <ul>
-                                    {% for field, change in version.field_dict.items %}
-                                    <li><strong>{{ field|capfirst }}:</strong> {{ change|safe }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                <div class="d-flex justify-content-center mt-4">
-                    <nav>
-                        <ul class="pagination">
-                            {% if page_obj.has_previous %}
-                            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">&laquo;</a></li>
-                            {% endif %}
-                            {% for page_num in page_obj.paginator.page_range %}
-                            <li class="page-item {% if page_obj.number == page_num %}active{% endif %}">
-                                <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
-                            </li>
-                            {% endfor %}
-                            {% if page_obj.has_next %}
-                            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">&raquo;</a></li>
-                            {% endif %}
-                        </ul>
-                    </nav>
-                </div>
-                {% else %}
-                <div class="alert alert-info ">Nenhuma versão encontrada.</div>
-                {% endif %}
-            </div>
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="versionHistoryModalLabel">Histórico de Versões</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Aviso de Filtros -->
+        <div class="alert alert-danger" role="alert">
+          <p><strong>Atenção:</strong> Após o uso de filtros ou paginação, clique novamente em <strong>Versões</strong> para visualizar o histórico filtrado.</p>
         </div>
+
+        <!-- Formulário de Filtro -->
+        <form id="versionFilterForm" method="get" class="mb-4">
+          <div class="row">
+            <div class="col-md-5">
+              <label for="start_date">Data Inicial</label>
+              <input type="date" id="start_date" name="start_date" class="form-control" value="{{ request.GET.start_date }}">
+            </div>
+            <div class="col-md-5">
+              <label for="end_date">Data Final</label>
+              <input type="date" id="end_date" name="end_date" class="form-control" value="{{ request.GET.end_date }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-filter"></i> Filtrar
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Listagem de Versões -->
+        {% if page_obj %}
+          {% if page_obj.object_list %}
+          <div class="list-group" id="versionList">
+            {% for version in page_obj %}
+            <div class="list-group-item">
+              <h6><strong>Data de Modificação:</strong> {{ version.revision.date_created|date:"d/m/Y H:i" }}</h6>
+              <p><strong>Modificado por:</strong> {{ version.revision.user }}</p>
+              <p><strong>Comentário:</strong> {{ version.revision.comment|default:"Sem comentário" }}</p>
+
+              <!-- Botões para Restaurar e Ver Detalhes -->
+              <div class="d-flex justify-content-between align-items-center mt-3">
+                <a href="{% url 'restore_instruction' instruction_id=instruction.id version_id=version.id %}" class="btn btn-warning btn-sm">
+                  Restaurar Versão
+                </a>
+                <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target="#versionDetails{{ version.id }}" aria-expanded="false" aria-controls="versionDetails{{ version.id }}">
+                  Ver Alterações
+                </button>
+              </div>
+
+              <!-- Detalhes das Alterações (Expansível) -->
+              <div class="collapse mt-3" id="versionDetails{{ version.id }}">
+                <div class="card card-body">
+                  <h6>Alterações:</h6>
+                  <ul>
+                    {% for field, change in version.field_dict.items %}
+                    <li>
+                      <strong>{{ field|capfirst }}:</strong>
+                      {% if field == 'imagem' %}
+                        {% if change %}
+                        <img src="{{ change.url }}" alt="{{ field }}" class="img-fluid" style="max-height: 150px;">
+                        {% else %}
+                        <p>Sem imagem associada.</p>
+                        {% endif %}
+                      {% else %}
+                        {{ change|safe }}
+                      {% endif %}
+                    </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <!-- Paginação -->
+          <nav aria-label="Pagination">
+            <ul class="pagination justify-content-center">
+              {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page=1" aria-label="First">
+                  <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                  <span aria-hidden="true">&laquo;</span>
+                </a>
+              </li>
+              {% endif %}
+              <li class="page-item disabled">
+                <span class="page-link">
+                  Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                </span>
+              </li>
+              {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                  <span aria-hidden="true">&raquo;</span>
+                </a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                  <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+              </li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% else %}
+        <div class="alert alert-warning" role="alert">
+          Nenhuma versão disponível.
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
     </div>
+  </div>
 </div>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // Função para adicionar IDs únicos aos cabeçalhos h2
+      function addIdsToHeaders() {
+        const headers = document.querySelectorAll("h2");
+        if (!headers.length) {
+          console.log("Nenhum título h2 encontrado!");
+          return;
+        }
+  
+        headers.forEach((header, index) => {
+          // Adiciona um ID único, se ainda não houver um
+          if (
+            !header.id &&
+            header.textContent.trim() !== "" &&
+            header.offsetParent !== null
+          ) {
+            const uniqueId = "section-" + (index + 1);
+            header.id = uniqueId;
+          }
+        });
+      }
+  
+      // Função para construir a tabela de conteúdo (TOC)
+      function buildTOC() {
+        const toc = document.getElementById("toc");
+        if (!toc) {
+          console.log("Elemento de TOC não encontrado!");
+          return;
+        }
+  
+        const headers = document.querySelectorAll("h2");
+        headers.forEach((header) => {
+          if (
+            header.id &&
+            header.textContent.trim() !== "" &&
+            header.offsetParent !== null
+          ) {
+            const tocItem = document.createElement("li");
+            tocItem.classList.add("list-group-item");
+  
+            const link = document.createElement("a");
+            link.href = `#${header.id}`; // Link para a seção
+            link.textContent = header.textContent;
+  
+            tocItem.appendChild(link);
+            toc.appendChild(tocItem);
+          }
+        });
+      }
+  
+      // Chama as funções para adicionar IDs e construir o TOC
+      addIdsToHeaders();
+      buildTOC();
+  
+      // Verifica se algum link do TOC foi clicado e faz a rolagem até a seção
+      const tocLinks = document.querySelectorAll("#toc a");
+      tocLinks.forEach((link) => {
+        link.addEventListener("click", function (event) {
+          event.preventDefault(); // Evita o comportamento padrão do link
+  
+          // Obtém o destino do link (seção correspondente)
+          const targetId = link.getAttribute("href").substring(1);
+          const targetElement = document.getElementById(targetId);
+  
+          if (targetElement) {
+            // Faz a rolagem suave até o destino
+            targetElement.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          }
+        });
+      });
+    });
+  </script>
+  
+
 {% endblock %}

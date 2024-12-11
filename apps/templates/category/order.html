@@ -6,9 +6,9 @@
         <div class="col-md-12">
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Ordenar Instruções</h5>
+                    <h5 class="card-title mb-0">Ordenar Categorias</h5>
                     <!-- Botão de Voltar -->
-                    <a href="{% url 'list_instruction' section_id category_id subcategory_id topic_id subtopic_id %}" class="btn btn-secondary btn-sm">
+                    <a href="{% url 'list_category' section_id=section.id %}" class="btn btn-secondary btn-sm">
                         <i class="fas fa-arrow-left"></i> Voltar
                     </a>
                 </div>
@@ -16,32 +16,32 @@
                     <form method="post" id="order-form">
                         {% csrf_token %}
                         <div class="table-responsive">
-                            <table class="table table-striped" id="sortable-instructions">
+                            <table class="table table-striped" id="sortable-categories">
                                 <thead>
                                     <tr>
-                                        <th>Título</th>
+                                        <th>Nome</th>
                                         <th>Ações</th> <!-- Coluna para as setas -->
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for instruction in instructions %}
-                                        <tr data-id="{{ instruction.id }}" class="sortable-row">
-                                            <td>{{ instruction.title }}</td>
+                                    {% for category in categories %}
+                                        <tr data-id="{{ category.id }}" class="sortable-row">
+                                            <td>{{ category.name }}</td>
                                             <td>
                                                 <!-- Setas para cima e para baixo -->
-                                                <button type="button" class="btn btn-link move-up" data-id="{{ instruction.id }}">&#8593;</button>
-                                                <button type="button" class="btn btn-link move-down" data-id="{{ instruction.id }}">&#8595;</button>
+                                                <button type="button" class="btn btn-link move-up" data-id="{{ category.id }}">&#8593;</button>
+                                                <button type="button" class="btn btn-link move-down" data-id="{{ category.id }}">&#8595;</button>
                                             </td>
                                         </tr>
                                     {% empty %}
                                         <tr>
-                                            <td colspan="2">Nenhuma instrução encontrada.</td>
+                                            <td colspan="2">Nenhuma categoria encontrada.</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
                         </div>
-                        <input type="hidden" name="instruction_ids" id="instruction_ids">
+                        <input type="hidden" name="category_ids" id="category_ids">
                         <button type="submit" class="btn btn-primary btn-sm">Salvar</button>
                     </form>
                 </div>
@@ -53,8 +53,8 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     $(function() {
-        // Funções para mover as instruções para cima e para baixo
-        $('#sortable-instructions').on('click', '.move-up', function() {
+        // Funções para mover as categorias para cima e para baixo
+        $('#sortable-categories').on('click', '.move-up', function() {
             var row = $(this).closest('tr');
             var prevRow = row.prev('tr.sortable-row');
 
@@ -64,7 +64,7 @@
             }
         });
 
-        $('#sortable-instructions').on('click', '.move-down', function() {
+        $('#sortable-categories').on('click', '.move-down', function() {
             var row = $(this).closest('tr');
             var nextRow = row.next('tr.sortable-row');
 
@@ -74,18 +74,19 @@
             }
         });
 
+        // Função para atualizar a ordem dos IDs
         function updateOrder() {
             var order = [];
-            $('#sortable-instructions tbody tr.sortable-row').each(function() {
+            $('#sortable-categories tbody tr.sortable-row').each(function() {
                 order.push($(this).data('id'));
             });
-            $('#instruction_ids').val(order.join(',')); // Atualiza o campo oculto com a nova ordem
+            $('#category_ids').val(order.join(',')); // Atualiza o campo oculto com a nova ordem
         }
 
         // Submissão do formulário
         $('#order-form').on('submit', function() {
-            if ($('#instruction_ids').val() === '') {
-                alert('Por favor, arraste e ordene as instruções antes de enviar.');
+            if ($('#category_ids').val() === '') {
+                alert('Por favor, arraste e ordene as categorias antes de enviar.');
                 return false; // Não envia o formulário
             }
         });

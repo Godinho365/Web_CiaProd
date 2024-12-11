@@ -16,28 +16,28 @@
                 <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
                     <ol class="breadcrumb breadcrumb-links breadcrumb-dark d-flex m-0">
                         <li class="breadcrumb-item">
-                            <a href="{% url 'list_section' %}"><i class="fas fa-home"></i></a>
+                            <a href="{% url 'list_section' %}"><small><i class="fas fa-home"></small></i></a>
                         </li>
                         <li class="breadcrumb-item">
-                            <a href="{% url 'list_category' section_id=section.id %}">{{ section.title }}</a>
+                            <a href="{% url 'list_category' section_id=section.id %}"><small>{{ section.title }}</small></a>
                         </li>
                         <li class="breadcrumb-item">
                             {% if category %}
-                                <a href="{% url 'list_subcategory' section_id=section.id category_id=category.id %}">{{ category.name }}</a>
+                                <a href="{% url 'list_subcategory' section_id=section.id category_id=category.id %}"><small>{{ category.name }}</small></a>
                             {% else %}
                                 <span>Categorias</span>
                             {% endif %}
                         </li>
                         <li class="breadcrumb-item">
                             {% if subcategory %}
-                                <a href="{% url 'list_topic' section_id=section.id category_id=category.id subcategory_id=subcategory.id %}">{{ subcategory.name }}</a>
+                                <a href="{% url 'list_topic' section_id=section.id category_id=category.id subcategory_id=subcategory.id %}"><small>{{ subcategory.name }}</small></a>
                             {% else %}
                                 <span>Subcategorias</span>
                             {% endif %}
                         </li>
                         <li class="breadcrumb-item">
                             {% if topic %}
-                                <a href="{% url 'list_subtopic' section_id=section.id category_id=category.id subcategory_id=subcategory.id topic_id=topic.id %}">{{ topic.name }}</a>
+                                <a href="{% url 'list_subtopic' section_id=section.id category_id=category.id subcategory_id=subcategory.id topic_id=topic.id %}"><small>{{ topic.name }}</small></a>
                             {% else %}
                                 <span>Tópicos</span>
                             {% endif %}
@@ -46,7 +46,7 @@
                             {% if subtopic %}
                                 <a href="{% url 'list_instruction' section_id=section.id category_id=category.id subcategory_id=subcategory.id topic_id=topic.id subtopic_id=subtopic.id %}">
                                     {% if section and category and subcategory and topic and subtopic %}
-                                        {{ subtopic.name }}
+                                <small>{{ subtopic.name }}</small>
                                     {% else %}
                                         <span>Subtópicos</span>
                                     {% endif %}
@@ -56,7 +56,7 @@
                             {% endif %}
                         </li>
                         {% if instruction %}
-                        <li class="breadcrumb-item active" aria-current="page">{{ instruction.title }}</li>
+                        <li class="breadcrumb-item active" aria-current="page"><small>{{ instruction.title }}<small></li>
                         {% else %}
                         {% endif %}
                     </ol>
@@ -71,7 +71,7 @@
 
 <div class="container mt-4">
     <div class="row justify-content-center">
-        <div class="col-lg-8 col-md-10 col-sm-12">
+        <div class="col-lg-12 col-md-10 col-sm-12">
             <div class="card">
                 <div class="card-header">
                     <h2 class="mb-1 text-center">
@@ -159,8 +159,8 @@
                         </div>
 
                         <div class="d-flex justify-content-between mt-4">
-                            <button type="submit" class="btn btn-primary">Salvar</button>
-                            <a href="{% url 'list_instruction' section_id=section.id category_id=category.id subcategory_id=subcategory.id topic_id=topic.id subtopic_id=subtopic.id %}" class="btn btn-secondary">Voltar</a>
+                            <button type="submit" class="btn btn-primary btn-sm">Salvar</button>
+                            <a href="{% url 'list_instruction' section_id=section.id category_id=category.id subcategory_id=subcategory.id topic_id=topic.id subtopic_id=subtopic.id %}" class="btn btn-secondary btn-sm">Voltar</a>
                         </div>
                         
                         

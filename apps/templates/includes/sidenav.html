@@ -157,94 +157,113 @@
             .nested-list-5 {
               padding-left: 75px;
             }
+
+            
+            
           </style> 
 
   <!-- Modal para lista hierárquica -->
-  <div class="modal fade" id="listModal" tabindex="-1" aria-labelledby="listModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="listModalLabel">Mapeamento da Documentação</h5>
-          <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <!-- Conteúdo da lista hierárquica -->
-          <ul class="list-group">
-            {% for section in sections %}
-              <li class="list-group-item p-1">
-                <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#section-{{ section.id }}">
-                  <i class="fas fa-folder"></i> <span class="small">{{ section.title }}</span>
-                  <i class="fas fa-chevron-right float-right toggle-icon"></i>
-                </button>
-                <div id="section-{{ section.id }}" class="collapse show">
-                  <ul class="list-group nested-list-1">
-                    {% for category in section.categories.all %}
-                      <li class="list-group-item p-1">
-                        <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#category-{{ category.id }}">
-                          <i class="fas fa-tag"></i> <a href="{% url 'view_category' section.id category.id %}" class="small">{{ category.name }}</a>
-                          <i class="fas fa-chevron-right float-right toggle-icon"></i>
-                        </button>
-                        <div id="category-{{ category.id }}" class="collapse show">
-                          <ul class="list-group nested-list-2">
-                            {% for subcategory in category.subcategories.all %}
-                              <li class="list-group-item p-1">
-                                <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#subcategory-{{ subcategory.id }}">
-                                  <i class="fas fa-cogs"></i> <a href="{% url 'view_subcategory' section.id category.id subcategory.id %}" class="small">{{ subcategory.name }}</a>
-                                  <i class="fas fa-chevron-right float-right toggle-icon"></i>
-                                </button>
-                                <div id="subcategory-{{ subcategory.id }}" class="collapse show">
-                                  <ul class="list-group nested-list-3">
-                                    {% for topic in subcategory.topics.all %}
-                                      <li class="list-group-item p-1">
-                                        <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#topic-{{ topic.id }}">
-                                          <i class="fas fa-book"></i> <a href="{% url 'view_topic' section.id category.id subcategory.id topic.id %}" class="small">{{ topic.name }}</a>
-                                          <i class="fas fa-chevron-right float-right toggle-icon"></i>
-                                        </button>
-                                        <div id="topic-{{ topic.id }}" class="collapse show">
-                                          <ul class="list-group nested-list-4">
-                                            {% for subtopic in topic.subtopics.all %}
-                                              <li class="list-group-item p-1">
-                                                <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#subtopic-{{ subtopic.id }}">
-                                                  <i class="fas fa-list-ul"></i> <a href="{% url 'view_subtopic' section.id category.id subcategory.id topic.id subtopic.id %}" class="small">{{ subtopic.name }}</a>
-                                                  <i class="fas fa-chevron-right float-right toggle-icon"></i>
-                                                </button>
-                                                <div id="subtopic-{{ subtopic.id }}" class="collapse show">
-                                                  <ul class="list-group nested-list-5">
-                                                    {% for instruction in subtopic.instructions.all %}
-                                                      <li class="list-group-item p-1">
-                                                        <a href="{% url 'view_instruction' section.id category.id subcategory.id topic.id subtopic.id instruction.id %}" class="small">
-                                                          <i class="fas fa-file-alt"></i> <span class="small">{{ instruction.title }}</span>
-                                                        </a>
-                                                      </li>
-                                                    {% endfor %}
-                                                  </ul>
-                                                </div>
-                                              </li>
-                                            {% endfor %}
-                                          </ul>
-                                        </div>
-                                      </li>
-                                    {% endfor %}
-                                  </ul>
-                                </div>
-                              </li>
-                            {% endfor %}
-                          </ul>
-                        </div>
-                      </li>
-                    {% endfor %}
-                  </ul>
-                </div>
-              </li>
-            {% endfor %}
-          </ul>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
-        </div>
+<div class="modal fade" id="listModal" tabindex="-1" aria-labelledby="listModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="listModalLabel">Mapeamento da Documentação</h5>
+        <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Conteúdo da lista hierárquica -->
+        <ul class="list-group">
+          {% for section in sections %}
+            <li class="list-group-item p-1">
+              <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#section-{{ section.id }}">
+                <i class="fas fa-folder {% if active_ids.section_id == section.id %}text-warning{% endif %}"></i>
+                <span class="small {% if active_ids.section_id == section.id %}text-warning{% endif %}">{{ section.title }}</span>
+                <i class="fas fa-chevron-right float-right toggle-icon {% if active_ids.section_id == section.id %}text-warning{% endif %}"></i>
+              </button>
+              <!-- Condicional para verificar se a URL corresponde ao item atual -->
+              <div id="section-{{ section.id }}" class="collapse {% if active_ids.section_id == section.id %}show{% endif %}">
+                <ul class="list-group nested-list-1">
+                  {% for category in section.categories.all %}
+                    <li class="list-group-item p-1">
+                      <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#category-{{ category.id }}">
+                        <i class="fas fa-tag {% if active_ids.category_id == category.id %}text-warning{% endif %}"></i>
+                        <a href="{% url 'view_category' section.id category.id %}" class="small {% if active_ids.category_id == category.id %}text-warning{% endif %}">{{ category.name }}</a>
+                        <i class="fas fa-chevron-right float-right toggle-icon {% if active_ids.category_id == category.id %}text-warning{% endif %}"></i>
+                      </button>
+                      <!-- Condicional para verificar se a URL corresponde ao item atual -->
+                      <div id="category-{{ category.id }}" class="collapse {% if active_ids.category_id == category.id %}show{% endif %}">
+                        <ul class="list-group nested-list-2">
+                          {% for subcategory in category.subcategories.all %}
+                            <li class="list-group-item p-1">
+                              <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#subcategory-{{ subcategory.id }}">
+                                <i class="fas fa-cogs {% if active_ids.subcategory_id == subcategory.id %}text-warning{% endif %}"></i>
+                                <a href="{% url 'view_subcategory' section.id category.id subcategory.id %}" class="small {% if active_ids.subcategory_id == subcategory.id %}text-warning{% endif %}">{{ subcategory.name }}</a>
+                                <i class="fas fa-chevron-right float-right toggle-icon {% if active_ids.subcategory_id == subcategory.id %}text-warning{% endif %}"></i>
+                              </button>
+                              <!-- Condicional para verificar se a URL corresponde ao item atual -->
+                              <div id="subcategory-{{ subcategory.id }}" class="collapse {% if active_ids.subcategory_id == subcategory.id %}show{% endif %}">
+                                <ul class="list-group nested-list-3">
+                                  {% for topic in subcategory.topics.all %}
+                                    <li class="list-group-item p-1">
+                                      <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#topic-{{ topic.id }}">
+                                        <i class="fas fa-book {% if active_ids.topic_id == topic.id %}text-warning{% endif %}"></i>
+                                        <a href="{% url 'view_topic' section.id category.id subcategory.id topic.id %}" class="small {% if active_ids.topic_id == topic.id %}text-warning{% endif %}">{{ topic.name }}</a>
+                                        <i class="fas fa-chevron-right float-right toggle-icon {% if active_ids.topic_id == topic.id %}text-warning{% endif %}"></i>
+                                      </button>
+                                      <!-- Condicional para verificar se a URL corresponde ao item atual -->
+                                      <div id="topic-{{ topic.id }}" class="collapse {% if active_ids.topic_id == topic.id %}show{% endif %}">
+                                        <ul class="list-group nested-list-4">
+                                          {% for subtopic in topic.subtopics.all %}
+                                            <li class="list-group-item p-1">
+                                              <button class="btn btn-link w-100 text-left small p-0 toggle-button" data-toggle="collapse" data-target="#subtopic-{{ subtopic.id }}">
+                                                <i class="fas fa-list-ul {% if active_ids.subtopic_id == subtopic.id %}text-warning{% endif %}"></i>
+                                                <a href="{% url 'view_subtopic' section.id category.id subcategory.id topic.id subtopic.id %}" class="small {% if active_ids.subtopic_id == subtopic.id %}text-warning{% endif %}">{{ subtopic.name }}</a>
+                                                <i class="fas fa-chevron-right float-right toggle-icon {% if active_ids.subtopic_id == subtopic.id %}text-warning{% endif %}"></i>
+                                              </button>
+                                              <!-- Condicional para verificar se a URL corresponde ao item atual -->
+                                              <div id="subtopic-{{ subtopic.id }}" class="collapse {% if subtopic.id|stringformat:"s" in request.path %}show{% endif %}">
+                                                <ul class="list-group nested-list-5">
+                                                  {% for instruction in subtopic.instructions.all %}
+                                                    <li class="list-group-item p-1">
+                                                      <a href="{% url 'view_instruction' section.id category.id subcategory.id topic.id subtopic.id instruction.id %}" class="small {% if active_ids.instruction_id == instruction.id %}text-warning{% endif %}">
+                                                        <i class="fas fa-file-alt {% if active_ids.instruction_id == instruction.id %}text-warning{% endif %}"></i> <span class="small">{{ instruction.title }}</span>
+                                                      </a>
+                                                    </li>
+                                                  {% endfor %}
+                                                </ul>
+                                              </div>
+                                            </li>
+                                          {% endfor %}
+                                        </ul>
+                                      </div>
+                                    </li>
+                                  {% endfor %}
+                                </ul>
+                              </div>
+                            </li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
       </div>
     </div>
   </div>
+</div>
+
+
+
+
+
+
 
   <!-- JavaScript para alternar o ícone -->
   <script>

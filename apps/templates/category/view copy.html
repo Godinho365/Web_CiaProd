@@ -8,85 +8,91 @@
         <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
           <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
             <li class="breadcrumb-item">
-              <a href="{% url 'list_section' %}"><small><i class="fas fa-home"></small></i></a>
+              <a href="{% url 'list_section' %}"><i class="fas fa-home"></i></a>
             </li>
             <li class="breadcrumb-item">
-              <a href="{% url 'list_category' section.id %}"><small>{{ section.title }}</small></a>
+              <a href="{% url 'list_category' section.id %}">{{ section.title }}</a>
             </li>
             <li class="breadcrumb-item active" aria-current="page">
-              <small>{{ category.name }}</small>
+              {{ category.name }}
             </li>
           </ol>
         </nav>
       </div>
     </div>
   </div>
+  
+  
+  
 
-<div class="container mt--4">
-  <div class="row">
-    <!-- Coluna da direita (Conteúdo principal) -->
-    <div class="col-md-10">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <div class="btn-group ml-auto">
-          <a href="{% url 'generate_pdf' 'Category' category.id %}" class="btn btn-primary btn-sm" target="_blank">
-            <i class="fas fa-file-pdf"></i> Download
+  
+  <div class="container mt-4">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card mb-4">
+          
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title text-center w-100 mb-0">{{ category.name }}</h5>
+            <a href="{% url 'generate_pdf' 'Category' category.id %}" class="btn btn-primary btn-sm ml-2" target="_blank">
+              <i class="fas fa-file-pdf"></i> Download
+            </a>
+            {% if user.is_superuser or is_contributor %}
+            <a href="{% url 'update_category' section_id=section.id id=category.id %}" class="btn btn-warning btn-sm ml-2">
+              <i class="fas fa-edit"></i> Editar
           </a>
-          {% if user.is_superuser or is_contributor %}
-          <a href="{% url 'update_category' section_id=section.id id=category.id %}" class="btn btn-warning btn-sm">
-            <i class="fas fa-edit"></i> Editar
-          </a>
-          <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#versionHistoryModal">
-            <i class="fas fa-history"></i> Versões
-          </button>
-          {% endif %}
-        </div>
-      </div>
+            <button type="button" class="btn btn-info btn-sm ml-2" data-toggle="modal" data-target="#versionHistoryModal">
+              <i class="fas fa-history"></i>Versões
+            </button>
+            {% endif %}
+          </div>
+          <div class="card-body">
+            <!-- Informações da Categoria -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <div class="card text-center mb-3">
+                  <div class="card-body">
+                    <h6 class="card-title"><strong>Autor:</strong></h6>
+                    <p class="card-text">{{ category.author.username|default:"Admin" }}</p>
+                  </div>
+                </div>
+                <div class="card text-center mb-3">
+                  <div class="card-body">
+                    <h6 class="card-title"><strong>Data de Criação:</strong></h6>
+                    <p class="card-text">{{ category.created_at|date:"d/m/Y H:i" }}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <div class="card text-center">
+                  <div class="card-body">
+                    <h6 class="card-title"><strong>Contagem de Visualizações:</strong></h6>
+                    <p class="card-text">{{ category.view_count }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row mt-4">
+              <div class="col-md-12">
+                <div class="card">
+                  <div class="card-body">
+                    <h6 class="card-title"><strong>Conteúdo:</strong></h6>
+                    <p class="card-text">{{ category.content|safe }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-      <div class="content-body" style="border-left: 1px solid #ddd; padding-left: 15px">
-        <h1>{{ category.name }}</h1>
-        <p>{{ category.content|safe }}</p>
-        <hr style="border: 1px solid #ddd; margin-bottom: 15px;">
-        <p><strong>Escrito por:</strong> 
-          {% if category.author %}
-          {{ category.author.get_full_name|default:category.author.username }}
-          {% else %}
-          Autor não informado
-          {% endif %}
-        </p>
-        <p><strong>Data de criação:</strong> {{ category.created_at|date:"d/m/Y H:i" }}</p>
-        <hr style="border: 1px solid #ddd; margin-bottom: 15px;">
-      </div>
+            
 
-      <!-- Navegação para Categorias -->
-<div class="mt-4 d-flex justify-content-between align-items-center">
-  {% if previous_category %}
-  <a href="{% url 'view_category' section.id previous_category.id %}" class="btn btn-primary">
-      <span>Anterior</span><br>
-      <small>{{ previous_category.name }}</small>
-  </a>
-  {% endif %}
-
-  <a href="{% url 'list_category' section.id %}" class="btn btn-secondary">Sair</a>
-
-  {% if next_category %}
-  <a href="{% url 'view_category' section.id next_category.id %}" class="btn btn-primary text-end">
-      <span>Próxima</span><br>
-      <small>{{ next_category.name }}</small>
-  </a>
-  {% endif %}
-</div>
-
-
-      {% include "includes/footer.html" %}
-    </div>
-
-    <!-- Coluna da esquerda (Índice) -->
-    <div class="col-md-2" style="position: sticky; top: 0; height: 100vh; overflow-y: auto">
-      <div class="table-of-contents__left-border" style="padding: 1rem">
-        <div class="table-of-contents__left-border" style="border-left: 1px solid #ddd; padding-right: 15px">
-          <ul id="toc" style="list-style: none; padding-left: 0; margin: 0; font-size: 0.7rem; line-height: 1.4; background: none;">
-            <!-- Índice será preenchido dinamicamente -->
-          </ul>
+            <!-- Botão de Voltar -->
+            <div class="row mt-4">
+              <div class="col-md-12 text-left">
+                <a href="{% url 'list_category' section.id %}" class="btn btn-secondary">
+                  <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -216,80 +222,7 @@
   </div>
 </div>
 
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    // Função para adicionar IDs únicos aos cabeçalhos h2
-    function addIdsToHeaders() {
-      const headers = document.querySelectorAll("h2");
-      if (!headers.length) {
-        console.log("Nenhum título h2 encontrado!");
-        return;
-      }
-
-      headers.forEach((header, index) => {
-        // Adiciona um ID único, se ainda não houver um
-        if (
-          !header.id &&
-          header.textContent.trim() !== "" &&
-          header.offsetParent !== null
-        ) {
-          const uniqueId = "section-" + (index + 1);
-          header.id = uniqueId;
-        }
-      });
-    }
-
-    // Função para construir a tabela de conteúdo (TOC)
-    function buildTOC() {
-      const toc = document.getElementById("toc");
-      if (!toc) {
-        console.log("Elemento de TOC não encontrado!");
-        return;
-      }
-
-      const headers = document.querySelectorAll("h2");
-      headers.forEach((header) => {
-        if (
-          header.id &&
-          header.textContent.trim() !== "" &&
-          header.offsetParent !== null
-        ) {
-          const tocItem = document.createElement("li");
-          tocItem.classList.add("list-group-item");
-
-          const link = document.createElement("a");
-          link.href = `#${header.id}`; // Link para a seção
-          link.textContent = header.textContent;
-
-          tocItem.appendChild(link);
-          toc.appendChild(tocItem);
-        }
-      });
-    }
-
-    // Chama as funções para adicionar IDs e construir o TOC
-    addIdsToHeaders();
-    buildTOC();
-
-    // Verifica se algum link do TOC foi clicado e faz a rolagem até a seção
-    const tocLinks = document.querySelectorAll("#toc a");
-    tocLinks.forEach((link) => {
-      link.addEventListener("click", function (event) {
-        event.preventDefault(); // Evita o comportamento padrão do link
-
-        // Obtém o destino do link (seção correspondente)
-        const targetId = link.getAttribute("href").substring(1);
-        const targetElement = document.getElementById(targetId);
-
-        if (targetElement) {
-          // Faz a rolagem suave até o destino
-          targetElement.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-        }
-      });
-    });
-  });
-</script>
 {% endblock %}
+
+
+

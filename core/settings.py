@@ -148,4 +148,12 @@ AUTHENTICATION_BACKENDS = (
     'guardian.backends.ObjectPermissionBackend',  # Permissões do Guardian
 )
 
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'full',
+        'height': 500,  # Ajuste para a altura desejada (em pixels)
+        'width': 1060,   # Define uma largura fixa em pixels
+    },
+}
+
 

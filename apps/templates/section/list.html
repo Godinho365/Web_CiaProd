@@ -8,7 +8,7 @@
             <div class="col-lg-6 col-7">
                 <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
                     <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-                        <li class="breadcrumb-item active"><i class="fas fa-home"></i></a></li>
+                        <li class="breadcrumb-item active"><small><i class="fas fa-home"></small></i></a></li>
                     </ol>
                 </nav>
             </div>
@@ -16,14 +16,17 @@
     </div>
 </div>
 
-<div class="container mt-4">
+<div class="container mt--4">
     <div class="row">
         <div class="col-md-12">
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title" style="text-transform: uppercase; margin: 0;">Seções</h5>
+                    <small class="text-muted ms-3">
+                        <i class="fas fa-info-circle me-2"></i> Clique na imagem para entrar na lista relacionada
+                    </small>
                     {% if user.is_superuser or is_contributor %}
-                        <a href="{% url 'create_section' %}" class="btn btn-primary">
+                        <a href="{% url 'create_section' %}" class="btn btn-primary btn-sm">
                             <i class="fas fa-plus-circle"></i> Nova
                         </a>
                     {% endif %}
@@ -31,8 +34,8 @@
                 <div class="card-body">
                     <div class="row">
                         {% for section in page_obj %}
-                            <div class="col-md-4 mb-4">
-                                <div class="card h-100">
+                            <div class="col-md-3 mb-3">
+                                <div class="card h-100 d-flex flex-column">
                                     <div class="card-img-container" style="height: 200px; display: flex; justify-content: center; align-items: center;">
                                         <a href="{% url 'list_category' section.id %}" class="d-block w-100 h-100 text-center">
                                             {% if section.imagem %}
@@ -144,6 +147,7 @@
             </div>
         </div>
     </div>
+    {% include "includes/footer.html" %}
 </div>
 
 {% endblock %}
