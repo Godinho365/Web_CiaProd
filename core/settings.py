@@ -32,7 +32,7 @@ SECRET_KEY = config('SECRET_KEY', default='S#perS3crEt_1122')
 DEBUG = config('DEBUG', default=True, cast=bool)
 
 # Load production server from .env
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', config('SERVER', default='127.0.0.1')]
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 INSTALLED_APPS = [
@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'apps.scripts',
     'apps.authentication',
     'reversion',
+    'django.contrib.gis'
     
     
 ]
@@ -98,10 +99,18 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'web2',
+        'NAME': 'web_ciaprod',
         'USER': 'postgres',
-        'PASSWORD': 'desenvolvimento',
-        'HOST': 'localhost',
+        'PASSWORD': 'postgres',
+        'HOST': '10.67.199.139',
+        'PORT': '5432',
+    },
+    'geospatial_db': {
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',  # Banco de dados geoespacial
+        'NAME': 'projetos_dgeo',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': '10.67.199.196',
         'PORT': '5432',
     }
 }

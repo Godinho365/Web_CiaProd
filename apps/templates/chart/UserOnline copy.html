@@ -47,15 +47,15 @@
                   <p class="mt-3 mb-0 text-sm">
                     <!-- Condicional para escolher a seta -->
                     <span class="{{ percentage_class }} mr-2">
-                      {% if percentage_increase >= 0 %}
-                          <i class="fa fa-arrow-up"></i>
-                      {% else %}
-                          <i class="fa fa-arrow-down"></i>
-                      {% endif %}
-                      {{ percentage_increase|floatformat:2 }}%
-                  </span>
-                  <span class="text-nowrap">Comparativo com mês passado</span>
-              </p>
+                        {% if percentage_increase >= 0 %}
+                            <i class="fa fa-arrow-up"></i> 
+                        {% else %}
+                            <i class="fa fa-arrow-down"></i> 
+                        {% endif %}
+                        {{ percentage_increase|floatformat:2 }}%
+                    </span>
+                    <span class="text-nowrap">Comparativo com mês passado</span>
+                </p>
                 
                 </div>
               </div>
@@ -148,7 +148,7 @@
                         </span>
                     {% endif %}
                     <span class="{{ login_percentage_class }}">{{ login_percentage_increase|floatformat:2 }}%</span>
-                    <span class="text-nowrap">Comparativo com mês passado</span>
+                    <span class="text-nowrap">Desde o mês passado</span>
                 </p>
                 </div>
               </div>
@@ -175,7 +175,7 @@
               <ul class="nav nav-pills justify-content-end">
                 <li class="nav-item mr-2">
                   <a
-                    class="nav-link py-2 px-3 active"
+                    class="nav-link py-2 px- active"
                     onclick="setFilter('day')"
                   >
                     <span class="d-none d-md-block">Dia</span>
@@ -217,51 +217,6 @@
         <h4 class="text-white">Usuários por Período</h4>
       </div>
     </div>
-
-    <div class="col-xl-6">
-      <div class="table-responsive">
-          <table class="table align-items-center table-dark">
-              <thead class="thead-dark">
-                  <!-- Linha com o título centralizado -->
-                  <tr>
-                      <th colspan="4" class="text-center"><h3 class="mb-4 text-white">Ranking de Visualizações</h3></th>
-                  </tr>
-                  <tr>
-                      <th scope="col" class="sort" data-sort="name">#</th>
-                      <th scope="col" class="sort" data-sort="name">Documentação</th>
-                      <th scope="col" class="sort" data-sort="view_count">Visualizações</th>
-                      <th scope="col"></th>
-                  </tr>
-              </thead>
-              <tbody class="list">
-                  {% for item in top_items %}
-                  <tr>
-                      <th scope="row">
-                          <div class="media align-items-center">
-                              <div class="media-body">
-                                  <span class="name mb-0 text-sm">{{ forloop.counter }}</span>
-                              </div>
-                          </div>
-                      </th>
-                      <td class="budget">
-                          <span class="name mb-0 text-sm">{{ item.1 }}</span> <!-- item.1 é o 'name' -->
-                      </td>
-                      <td class="budget">
-                          {{ item.2 }} <!-- item.2 é o 'view_count' -->
-                      </td>
-                      
-                  </tr>
-                  {% endfor %}
-              </tbody>
-          </table>
-      </div>
-  </div>
-  
-  
-    
-
-    
-
   </div>
   {% include "includes/footer.html" %}
 </div>
@@ -284,11 +239,11 @@
 
   function updateChartData(filter) {
     var groupedData = groupDataByPeriod(filter);
-  
+
     if (chart) {
       chart.destroy();
     }
-  
+
     var ctx = document.getElementById("chart-sales-dark").getContext("2d");
     chart = new Chart(ctx, {
       type: "line",
@@ -302,7 +257,6 @@
             backgroundColor: "rgba(75, 192, 192, 0.2)",
             borderWidth: 1,
             fill: true,
-            tension: 0.4, // Suaviza a linha
           },
         ],
       },
@@ -336,11 +290,11 @@
               label: function (tooltipItem) {
                 var period = groupedData.labels[tooltipItem.dataIndex];
                 var userEntries = groupedData.usersPerDay[period] || {};
-  
+
                 if (Object.keys(userEntries).length === 0) {
                   return "Sem entradas para esse período.";
                 }
-  
+
                 // Formatação do período (Mês/Ano ou Ano)
                 var formattedPeriod;
                 if (period.includes('-')) {
@@ -349,7 +303,7 @@
                 } else {
                   formattedPeriod = period;
                 }
-  
+
                 return Object.keys(userEntries).map(function (user) {
                   return `Usuário: ${user} | Entradas: ${userEntries[user]}`;
                 });
@@ -360,7 +314,6 @@
       },
     });
   }
-  
 
   function groupDataByPeriod(period) {
     let groupedLabels = [];
@@ -377,6 +330,9 @@
 
       if (period === "day") {
         label = day;
+      } else if (period === "week") {
+        let weekNumber = getWeekNumber(new Date(day));
+        label = "Semana " + weekNumber;
       } else if (period === "month") {
         let month = new Date(day).getMonth();
         label = months[month];
@@ -411,9 +367,14 @@
     };
   }
 
-  updateChartData("day"); // Exibe o gráfico por dia ao carregar a página
-</script>
+  function getWeekNumber(date) {
+    var firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+    var pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+    return Math.ceil((pastDaysOfYear + 1) / 7);
+  } 
 
+  updateChartData("day"); 
+</script>
 
     
 

@@ -22,6 +22,7 @@ import io
 from django.http import HttpResponse
 from django.apps import apps
 from django.http import JsonResponse
+from django.utils import timezone
 
 
 @login_required
@@ -281,6 +282,8 @@ def delete_category(request, id):
     # Renderiza a página de confirmação de exclusão
     return render(request, 'category/delete.html', {'category': category})
 
+from django.utils import timezone
+
 @login_required
 def view_category(request, section_id, category_id):
     # Obtendo a categoria pelo ID
@@ -288,6 +291,7 @@ def view_category(request, section_id, category_id):
 
     # Incrementando o contador de visualizações
     category.view_count += 1
+    category.last_viewed = timezone.now()
     category.save()
 
     # Obtendo a seção associada à categoria
@@ -491,6 +495,7 @@ def view_subcategory(request, section_id, category_id, subcategory_id):
 
     # Incrementando o contador de visualizações
     subcategory.view_count += 1
+    category.last_viewed = timezone.now()
     subcategory.save()
 
     # Obter o histórico de versões da subcategoria
@@ -743,6 +748,7 @@ def view_instruction(request, section_id, category_id, subcategory_id, topic_id,
 
     # Incrementa o contador de visualizações da instrução
     instruction.view_count += 1
+    category.last_viewed = timezone.now()
     instruction.save()
 
     # Busca a seção, categoria e subcategoria relacionadas
@@ -1168,6 +1174,7 @@ def view_topic(request, section_id, category_id, subcategory_id, topic_id):
 
     # Incrementando o contador de visualizações
     topic.view_count += 1
+    category.last_viewed = timezone.now()
     topic.save()
 
     # Obter o histórico de versões do tópico
@@ -1396,6 +1403,7 @@ def view_subtopic(request, section_id, category_id, subcategory_id, topic_id, su
 
     # Incrementa o contador de visualizações do subtópico
     subtopic.view_count += 1
+    category.last_viewed = timezone.now()
     subtopic.save()
 
     # Obter o histórico de versões do subtópico

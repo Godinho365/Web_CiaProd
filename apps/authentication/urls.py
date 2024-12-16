@@ -4,7 +4,7 @@ Copyright (c) 2019 - present AppSeed.us
 """
 
 from django.urls import path
-from .views import login_view, register_user, create_or_edit_group, list_groups, delete_group, list_users, create_or_edit_user, delete_user, daily_login_activity, my_profile
+from .views import login_view, register_user, create_or_edit_group, list_groups, delete_group, list_users, create_or_edit_user, delete_user, daily_login_activity, my_profile, dashboard
 from django.contrib.auth.views import LogoutView
 from django.contrib.auth import views as auth_views
 from .views import CustomPasswordResetView
@@ -20,7 +20,7 @@ urlpatterns = [
     path('usuarios/', list_users, name='list_users'),
     path('usuarios/editar/<int:user_id>/', create_or_edit_user, name='edit_user'),
     path('usuarios/excluir/<int:user_id>/', delete_user, name='delete_user'),
-    path('daily-login-activity/', daily_login_activity, name='daily_login_activity'),
+    path('daily-login-activity/', dashboard, name='daily_login_activity'),
     path('profile/', my_profile, name='my_profile'),
 
     path('recuperar-senha/', CustomPasswordResetView.as_view(), name='custom_password_reset'),

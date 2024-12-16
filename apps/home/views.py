@@ -10,6 +10,7 @@ from django.template import loader
 from django.urls import reverse
 from django.shortcuts import render
 from apps.doc.models import Section
+from apps.authentication.views import dashboard
 
 
 @login_required(login_url="/login/")
@@ -22,7 +23,7 @@ def index(request):
 
     context['sections'] = sections  # Adicione as sections ao contexto
 
-    html_template = loader.get_template('home/index.html')
+    html_template = loader.get_template('chart/UserOnline.html')
     return HttpResponse(html_template.render(context, request))
 
 

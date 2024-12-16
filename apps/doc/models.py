@@ -2,6 +2,7 @@ from django.db import models
 from ckeditor.fields import RichTextField
 from django.contrib.auth.models import User
 import reversion
+from django.utils import timezone
 
 @reversion.register
 class Instruction(models.Model):
@@ -18,6 +19,7 @@ class Instruction(models.Model):
     view_count = models.PositiveIntegerField(default=0)
     subfase = models.CharField(max_length=100, blank=True, null=True)
     order = models.IntegerField(default=0)
+    last_viewed = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ['order', 'created_at', 'title']
@@ -34,6 +36,7 @@ class Section(models.Model):
     view_count = models.PositiveIntegerField(default=0)
     order = models.PositiveIntegerField(default=0)
     imagem = models.ImageField(upload_to='section_imagens/', blank=True, null=True)
+    last_viewed = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ['order', 'created_at', 'title']
@@ -51,6 +54,7 @@ class Category(models.Model):
     view_count = models.IntegerField(default=0)
     order = models.PositiveIntegerField(default=0)
     imagem = models.ImageField(upload_to='categories_imagens/', blank=True, null=True)
+    last_viewed = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ['order', 'created_at', 'name']
@@ -69,6 +73,7 @@ class Subcategory(models.Model):
     view_count = models.PositiveIntegerField(default=0)
     order = models.PositiveIntegerField(default=0)
     imagem = models.ImageField(upload_to='subcategory_imagens/', blank=True, null=True)
+    last_viewed = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ['order', 'created_at', 'name']
@@ -88,6 +93,7 @@ class Topic(models.Model):
     view_count = models.PositiveIntegerField(default=0)
     order = models.PositiveIntegerField(default=0)
     imagem = models.ImageField(upload_to='topic_imagens/', blank=True, null=True)
+    last_viewed = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ['order', 'created_at', 'name']
@@ -105,6 +111,7 @@ class Subtopic(models.Model):
     view_count = models.PositiveIntegerField(default=0)
     order = models.PositiveIntegerField(default=0)
     imagem = models.ImageField(upload_to='subtopic_imagens/', blank=True, null=True)
+    last_viewed = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ['order', 'created_at', 'name']
