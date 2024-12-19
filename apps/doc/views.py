@@ -561,6 +561,7 @@ def list_instruction(request, section_id, category_id, subcategory_id, topic_id,
     # Obtém os objetos Section, Category, Subcategory, Topic e Subtopic
     section = get_object_or_404(Section, id=section_id)
     category = get_object_or_404(Category, id=category_id)
+
     subcategory = get_object_or_404(Subcategory, id=subcategory_id)
     topic = get_object_or_404(Topic, id=topic_id)
     subtopic = get_object_or_404(Subtopic, id=subtopic_id)
@@ -746,11 +747,6 @@ def view_instruction(request, section_id, category_id, subcategory_id, topic_id,
     # Busca a instrução com base no ID
     instruction = get_object_or_404(Instruction, id=instruction_id)
 
-    # Incrementa o contador de visualizações da instrução
-    instruction.view_count += 1
-    category.last_viewed = timezone.now()
-    instruction.save()
-
     # Busca a seção, categoria e subcategoria relacionadas
     section = get_object_or_404(Section, id=section_id)
     category = get_object_or_404(Category, id=category_id, section=section)
@@ -759,6 +755,11 @@ def view_instruction(request, section_id, category_id, subcategory_id, topic_id,
     # Busca o tópico e subtópico relacionados, se existir
     topic = get_object_or_404(Topic, id=topic_id, subcategory=subcategory) if topic_id else None
     subtopic = get_object_or_404(Subtopic, id=subtopic_id, topic=topic) if subtopic_id else None
+
+    # Incrementa o contador de visualizações da instrução
+    instruction.view_count += 1
+    category.last_viewed = timezone.now()
+    instruction.save()
 
     # Obter o histórico de versões da instrução
     versions = Version.objects.get_for_object(instruction)

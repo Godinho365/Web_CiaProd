@@ -19,6 +19,9 @@ EMAIL_HOST_USER = 'god.rafa365@gmail.com'  # Seu e-mail
 EMAIL_HOST_PASSWORD = 'sxnf pnsm qshl atjm'  # Sua senha de aplicativo do Gmail (não sua senha de login)
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
+LOGIN_URL = '/login/'  # Substitua pelo caminho correto para sua página de login
+
+
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -49,7 +52,9 @@ INSTALLED_APPS = [
     'apps.scripts',
     'apps.authentication',
     'reversion',
-    'django.contrib.gis'
+    'apps.geospatial_app'
+    
+    
     
     
 ]

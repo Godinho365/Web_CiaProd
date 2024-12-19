@@ -14,4 +14,5 @@ urlpatterns = [
     path("", include("apps.home.urls")),  # <- Adicione a vírgula aqui
     path('doc/', include('apps.doc.urls')),
     path('auth/', include('apps.authentication.urls')),  # UI Kits Html files
+    path('loc/', include('apps.geospatial_app.urls')),  # Incluindo as URLs do seu aplicativo
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,13 @@
+{% extends 'layouts/base.html' %}
+
+{% block content %}
+    <h1></h1>
+    
+    <!-- Contêiner do mapa -->
+    <div id="map-container" style="width: 70%; height: 400px; margin: auto; position: relative;">
+        {{ map_html|safe }}
+        
+    </div>
+
+
+{% endblock %}
